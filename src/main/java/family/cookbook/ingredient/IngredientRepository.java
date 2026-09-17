@@ -6,4 +6,5 @@ import java.util.UUID;
 
 public interface IngredientRepository extends JpaRepository<Ingredient, UUID> {
 
+    boolean existsByNameIgnoreCase(String name);
 }

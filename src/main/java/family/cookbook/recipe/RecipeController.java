@@ -2,6 +2,7 @@ package family.cookbook.recipe;
 
 
 import family.cookbook.category.Category;
+import family.cookbook.recipe.dto.CreateRecipeRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,8 +32,8 @@ public class RecipeController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Recipe createRecipe(@RequestBody Recipe recipe) {
-        return recipeService.createRecipe(recipe.getTitle());
+    public Recipe createRecipe(@RequestBody CreateRecipeRequest request) {
+        return recipeService.createRecipe(request.title());
     }
 
     @DeleteMapping("/{id}")

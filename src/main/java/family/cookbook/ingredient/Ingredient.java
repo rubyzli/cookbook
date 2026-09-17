@@ -13,6 +13,9 @@ public class Ingredient {
     private String id;
     private String name;
 
+    public Ingredient(String name) {
+    }
+
     public String getId() {
         return id;
     }
