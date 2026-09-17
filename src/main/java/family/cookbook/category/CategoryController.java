@@ -1,5 +1,6 @@
 package family.cookbook.category;
 
+import family.cookbook.category.dto.CreateCategoryRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,8 +30,8 @@ public class CategoryController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Category createCategory(@RequestBody Category category) {
-        return categoryService.createCategory(category.getName());
+    public Category createCategory(@RequestBody CreateCategoryRequest request) {
+        return categoryService.createCategory(request.name());
     }
 
     @DeleteMapping("/{id}")
