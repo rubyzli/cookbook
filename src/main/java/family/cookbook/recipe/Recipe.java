@@ -22,6 +22,9 @@ public class Recipe {
     private String createdBy;
     private String createdAt;
 
+    public Recipe(String name) {
+    }
+
     public String getId() {
         return id;
     }
