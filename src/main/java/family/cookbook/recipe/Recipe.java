@@ -1,6 +1,16 @@
 package family.cookbook.recipe;
 
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+
+@Entity
 public class Recipe {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
     private String title;
     private String description;
@@ -11,19 +21,6 @@ public class Recipe {
     private String imageUrl;
     private String createdBy;
     private String createdAt;
-
-    public Recipe(String id, String title, String description, String servings, String prepTimeMinutes, String cookTimeMinutes, String instructions, String imageUrl, String createdBy, String createdAt) {
-        this.id = id;
-        this.title = title;
-        this.description = description;
-        this.servings = servings;
-        this.prepTimeMinutes = prepTimeMinutes;
-        this.cookTimeMinutes = cookTimeMinutes;
-        this.instructions = instructions;
-        this.imageUrl = imageUrl;
-        this.createdBy = createdBy;
-        this.createdAt = createdAt;
-    }
 
     public String getId() {
         return id;
