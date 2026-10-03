@@ -1,5 +1,6 @@
-import { Link, useParams } from 'react-router'
-import { useRecipe } from '../api/queries.js'
+import { useState } from 'react'
+import { Link, useNavigate, useParams } from 'react-router'
+import { useDeleteRecipe, useRecipe } from '../api/queries.js'
 import CategoryChips from '../components/CategoryChips.jsx'
 import RecipeImage from '../components/RecipeImage.jsx'
 import RecipeMeta from '../components/RecipeMeta.jsx'
@@ -52,6 +53,7 @@ function RecipeDetailContent({ query }) {
           {recipe.description && <p className="description">{recipe.description}</p>}
           <RecipeMeta recipe={recipe} showTotal />
           <CategoryChips categories={recipe.categories} />
+          <RecipeActions recipe={recipe} />
         </div>
       </header>
 
@@ -79,6 +81,51 @@ function RecipeDetailContent({ query }) {
         </section>
       </div>
     </article>
+  )
+}
+
+// Delete asks for confirmation in place, since browser confirm() dialogs are easy to click through
+function RecipeActions({ recipe }) {
+  const [confirming, setConfirming] = useState(false)
+  const deleteRecipe = useDeleteRecipe(recipe.id)
+  const navigate = useNavigate()
+
+  async function confirmDelete() {
+    try {
+      await deleteRecipe.mutateAsync()
+      navigate('/', { replace: true })
+    } catch {
+      // The error is shown below from deleteRecipe.error
+    }
+  }
+
+  if (confirming) {
+    return (
+      <div className="recipe-actions confirm" role="group" aria-label="Confirm delete">
+        <span>Delete “{recipe.name}”? This can’t be undone.</span>
+        <button type="button" className="button danger" onClick={confirmDelete} disabled={deleteRecipe.isPending}>
+          {deleteRecipe.isPending ? 'Deleting…' : 'Yes, delete'}
+        </button>
+        <button type="button" className="button ghost" onClick={() => setConfirming(false)}>
+          Cancel
+        </button>
+        {deleteRecipe.isError && (
+          <p className="field-error" role="alert">
+            Couldn’t delete: {deleteRecipe.error.message}
+          </p>
+        )}
+      </div>
+    )
+  }
+  return (
+    <div className="recipe-actions">
+      <Link to={`/recipes/${recipe.id}/edit`} className="button">
+        Edit
+      </Link>
+      <button type="button" className="button ghost danger-text" onClick={() => setConfirming(true)}>
+        Delete
+      </button>
+    </div>
   )
 }
 

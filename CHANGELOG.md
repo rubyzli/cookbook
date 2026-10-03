@@ -18,6 +18,14 @@ so entries are grouped by date.
   - Loading, empty, error and not-found states, a layout that works on phones, and light and dark
     themes that follow the system setting.
   - Vitest and Testing Library tests for the pages, API client and formatting helpers.
+- **Recipe form** for creating (`/recipes/new`) and editing (`/recipes/{id}/edit`) recipes, linked
+  from a "New recipe" button on the list and an "Edit" button on the detail page.
+  - Categories as toggle chips, with a box to add a new category without leaving the form.
+  - Ingredient lines with suggestions from existing ingredients; new names are created on save.
+    Lines can be reordered or removed, and amount and unit are optional (`1,5` is read as 1.5).
+  - Checks the backend's rules before sending, shows server errors on the matching field or
+    ingredient row, and moves focus to the first problem.
+- Delete button on the recipe detail page, with an in-page confirmation.
 - **Recipe details, categories and ingredients:** a recipe can now be created and updated with all
   of its fields (description, servings, prep and cook time, instructions, image URL), a list of
   category ids, and an ordered list of ingredient lines. Each line has an optional amount and unit,

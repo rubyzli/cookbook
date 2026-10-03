@@ -56,7 +56,14 @@ Pages:
 - `/` lists recipes, with a search box and category filter. Both are kept in the URL
   (`/?search=pie&categoryId=...`), so a filtered list can be bookmarked or shared.
 - `/recipes/{id}` shows a recipe with its times, categories, ingredients and numbered steps.
-  Each line of a recipe's instructions is shown as one step.
+  Each line of a recipe's instructions is shown as one step. Edit and Delete buttons are at the top;
+  Delete asks for confirmation first.
+- `/recipes/new` and `/recipes/{id}/edit` are the recipe form:
+  - Categories are toggled on and off, and a new one can be added right in the form.
+  - Ingredient names are typed with suggestions from existing ingredients. Names that don't exist
+    yet are created when the recipe is saved. Lines can be reordered, and amount and unit are optional.
+  - The form checks the same rules as the backend before sending, and shows any errors the backend
+    returns next to the field they belong to.
 
 Other commands, all run in `frontend/`:
 
@@ -148,8 +155,8 @@ src/main/java/family/cookbook/
 
 frontend/src/
 ├── api/           fetch wrapper (client.js) and TanStack Query hooks (queries.js)
-├── components/    Layout, recipe card, category chips, shared bits
+├── components/    Layout, recipe card, recipe form and its parts, shared bits
 ├── pages/         One component per route, with its tests next to it
-├── utils/         Formatting for times and amounts
+├── utils/         Formatting, and recipe form logic (validation, request building)
 └── test/          Test setup and helpers (renderApp, mockApi)
 ```

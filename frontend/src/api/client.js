@@ -23,6 +23,22 @@ export async function apiGet(path, params = {}) {
   return response.json()
 }
 
+// POST/PUT/DELETE with an optional JSON body. Returns the parsed response, or null for 204 No Content.
+export async function apiSend(method, path, body) {
+  const response = await fetch(path, {
+    method,
+    headers: {
+      Accept: 'application/json',
+      ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+  if (!response.ok) {
+    throw await toApiError(response)
+  }
+  return response.status === 204 ? null : response.json()
+}
+
 async function toApiError(response) {
   try {
     const problem = await response.json()

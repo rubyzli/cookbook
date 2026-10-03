@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
-import { mockApi, renderApp } from '../test/utils.jsx'
+import { mockApi, renderApp, sentRequests } from '../test/utils.jsx'
 
 const applePie = {
   id: 'r1',
@@ -110,5 +110,54 @@ describe('RecipeDetailPage', () => {
     await userEvent.click(screen.getByRole('link', { name: '← All recipes' }))
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Recipes' })).toBeInTheDocument()
+  })
+
+  it('deletes the recipe after confirmation and returns to the list', async () => {
+    const fetchMock = mockApi({
+      '/api/recipes/r1': applePie,
+      'DELETE /api/recipes/r1': { status: 204 },
+      '/api/recipes': [],
+      '/api/categories': [],
+    })
+    renderApp('/recipes/r1')
+    await screen.findByRole('heading', { level: 1, name: 'Apple Pie' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    const confirm = screen.getByRole('group', { name: 'Confirm delete' })
+    expect(confirm).toHaveTextContent('Delete “Apple Pie”? This can’t be undone.')
+    expect(sentRequests(fetchMock)).toEqual([])
+
+    await userEvent.click(within(confirm).getByRole('button', { name: 'Yes, delete' }))
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Recipes' })).toBeInTheDocument()
+    expect(sentRequests(fetchMock)).toEqual([{ method: 'DELETE', url: '/api/recipes/r1', body: undefined }])
+  })
+
+  it('cancels a delete without sending anything', async () => {
+    const fetchMock = mockApi({ '/api/recipes/r1': applePie })
+    renderApp('/recipes/r1')
+    await screen.findByRole('heading', { level: 1, name: 'Apple Pie' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(screen.queryByRole('group', { name: 'Confirm delete' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Edit' })).toBeInTheDocument()
+    expect(sentRequests(fetchMock)).toEqual([])
+  })
+
+  it('shows an error if the delete fails', async () => {
+    mockApi({
+      '/api/recipes/r1': applePie,
+      'DELETE /api/recipes/r1': { status: 500, body: { detail: 'Internal Server Error' } },
+    })
+    renderApp('/recipes/r1')
+    await screen.findByRole('heading', { level: 1, name: 'Apple Pie' })
+
+    await userEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Yes, delete' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t delete: Internal Server Error')
+    expect(screen.getByTestId('location')).toHaveTextContent('/recipes/r1')
   })
 })

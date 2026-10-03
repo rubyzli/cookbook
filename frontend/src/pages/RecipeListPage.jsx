@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { useCategories, useRecipes } from '../api/queries.js'
 import RecipeCard from '../components/RecipeCard.jsx'
 import StatusMessage from '../components/StatusMessage.jsx'
@@ -43,6 +43,9 @@ export default function RecipeListPage() {
             {recipes.data.length} {recipes.data.length === 1 ? 'recipe' : 'recipes'}
           </p>
         )}
+        <Link to="/recipes/new" className="button primary new-recipe">
+          + New recipe
+        </Link>
       </div>
 
       <div className="toolbar" role="search">
@@ -104,7 +107,14 @@ function RecipeResults({ query, filtered }) {
   if (query.data.length === 0) {
     return (
       <StatusMessage>
-        {filtered ? 'No recipes match your search.' : 'No recipes yet.'}
+        {filtered ? (
+          'No recipes match your search.'
+        ) : (
+          <>
+            <p>No recipes yet.</p>
+            <Link to="/recipes/new">Add the first one</Link>
+          </>
+        )}
       </StatusMessage>
     )
   }

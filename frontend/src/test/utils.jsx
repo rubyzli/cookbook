@@ -23,13 +23,21 @@ function LocationProbe() {
   return <output data-testid="location" hidden>{location.pathname + location.search}</output>
 }
 
-// Stubs fetch. `routes` maps a path (with query string, if any) to either a JSON body
-// or a { status, body } response; unknown paths return 404.
+// Stubs fetch. `routes` maps "METHOD /path?query" (or just "/path" for GET) to a response:
+// a JSON body, { status, body }, or a function receiving { method, url, body } and returning either.
+// Unknown routes return 404.
 export function mockApi(routes) {
-  const fetchMock = vi.fn(async (url) => {
-    const route = routes[url]
+  const fetchMock = vi.fn(async (url, options = {}) => {
+    const method = options.method ?? 'GET'
+    let route = routes[`${method} ${url}`] ?? (method === 'GET' ? routes[url] : undefined)
+    if (typeof route === 'function') {
+      route = route({ method, url, body: options.body ? JSON.parse(options.body) : undefined })
+    }
     if (route === undefined) {
       return jsonResponse(404, { status: 404, detail: 'Not found' })
+    }
+    if (route.status === 204) {
+      return new Response(null, { status: 204 })
     }
     return route.status ? jsonResponse(route.status, route.body) : jsonResponse(200, route)
   })
@@ -46,4 +54,15 @@ function jsonResponse(status, body) {
 
 export function requestedUrls(fetchMock) {
   return fetchMock.mock.calls.map(([url]) => url)
+}
+
+// Requests other than GETs, as { method, url, body }, in the order they were sent
+export function sentRequests(fetchMock) {
+  return fetchMock.mock.calls
+    .filter(([, options]) => options?.method && options.method !== 'GET')
+    .map(([url, options]) => ({
+      method: options.method,
+      url,
+      body: options.body ? JSON.parse(options.body) : undefined,
+    }))
 }
