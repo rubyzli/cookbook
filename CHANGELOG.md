@@ -8,32 +8,10 @@ so entries are grouped by date.
 
 ### Added
 
-- **Frontend** in `frontend/`: a React app (plain JavaScript) built with Vite, using TanStack
-  Query for API calls and React Router for pages. In development, Vite forwards `/api` to the
-  backend on port 8080, so no CORS setup is needed.
-  - Recipe list (`/`) with cards showing description, times, servings and categories. A search box
-    (applied after a short pause in typing) and a category filter are kept in the URL.
-  - Recipe detail (`/recipes/{id}`) with total time, category links that filter the list,
-    ingredient lines and numbered instruction steps.
-  - Loading, empty, error and not-found states, a layout that works on phones, and light and dark
-    themes that follow the system setting.
-  - Vitest and Testing Library tests for the pages, API client and formatting helpers.
-- **Recipe form** for creating (`/recipes/new`) and editing (`/recipes/{id}/edit`) recipes, linked
-  from a "New recipe" button on the list and an "Edit" button on the detail page.
-  - Categories as toggle chips, with a box to add a new category without leaving the form.
-  - Ingredient lines with suggestions from existing ingredients; new names are created on save.
-    Lines can be reordered or removed, and amount and unit are optional (`1,5` is read as 1.5).
-  - Checks the backend's rules before sending, shows server errors on the matching field or
-    ingredient row, and moves focus to the first problem.
-- Delete button on the recipe detail page, with an in-page confirmation.
-- **One app on one port:** the Maven build now installs Node (24 LTS, into `frontend/node`),
-  builds the frontend into the jar and runs the frontend tests. `mvn spring-boot:run` and
-  `java -jar` serve the website and the API together on port 8080. `-DskipFrontend` skips the
-  frontend for backend-only work; `-DskipTests` skips both test suites.
-- `FrontendController` answers page URLs such as `/recipes/{id}/edit` with the app's `index.html`,
-  so links and page reloads work. API paths, `/assets/**` and files are left alone.
-- **Recipe details, categories and ingredients:** a recipe can now be created and updated with all
-  of its fields (description, servings, prep and cook time, instructions, image URL), a list of
+**API and database**
+
+- **Recipe details, categories and ingredients:** a recipe can be created and updated with all of
+  its fields (description, servings, prep and cook time, instructions, image URL), a list of
   category ids, and an ordered list of ingredient lines. Each line has an optional amount and unit,
   and the same ingredient can appear on more than one line.
 - `PUT /api/recipes/{id}` replaces a recipe, including its categories and ingredients. Returns 404
@@ -54,10 +32,46 @@ so entries are grouped by date.
 - 400 response listing any category or ingredient ids in a recipe request that don't exist.
 - 409 response when a name already exists (ignoring case), when two requests create the same name
   at once, or when deleting an ingredient that a recipe still uses.
-- Unit tests: Mockito tests for every service and `@WebMvcTest` tests for every controller. They
-  need no database; only `CookbookApplicationTests` does.
-- `README.md` with setup, API reference and schema notes.
-- This changelog.
+
+**Website** (React app in `frontend/`, plain JavaScript, built with Vite, TanStack Query and
+React Router)
+
+- Recipe list (`/`) with cards showing description, times, servings and categories. A search box
+  (applied after a short pause in typing) and a category filter are kept in the URL, so a filtered
+  list can be bookmarked.
+- Recipe detail (`/recipes/{id}`) with total time, category links that filter the list, ingredient
+  lines and numbered instruction steps (one per line of the instructions).
+- Recipe form for creating (`/recipes/new`) and editing (`/recipes/{id}/edit`), linked from a
+  "New recipe" button on the list and an "Edit" button on the detail page:
+  - Categories as toggle chips, with a box to add a new category without leaving the form.
+  - Ingredient lines with suggestions from existing ingredients; new names are created on save.
+    Lines can be reordered or removed, and amount and unit are optional (`1,5` is read as 1.5).
+  - Checks the backend's rules before sending, shows server errors on the matching field or
+    ingredient row, and moves focus to the first problem.
+- Delete button on the recipe detail page, with an in-page confirmation.
+- Loading, empty, error and not-found states, a layout that works on phones, and light and dark
+  themes that follow the system setting.
+
+**Build and running**
+
+- **One app on one port:** the Maven build installs its own Node (24 LTS, into `frontend/node`),
+  builds the website into the jar and runs the website's tests. `mvn spring-boot:run` and
+  `java -jar` serve the website and the API together on port 8080.
+- `-DskipFrontend` skips installing, building and testing the website for backend-only work;
+  `-DskipTests` skips both test suites.
+- `FrontendController` answers page URLs such as `/recipes/{id}/edit` with the app's `index.html`,
+  so links and page reloads work. API paths, `/assets/**` and files are left alone.
+- For website work, `npm run dev` in `frontend/` starts Vite's dev server with live reload on port
+  5173. It forwards `/api` to the backend on port 8080, so no CORS setup is needed.
+
+**Tests and docs**
+
+- Backend: Mockito tests for every service and `@WebMvcTest` tests for every controller, including
+  which URLs `FrontendController` forwards. They need no database; only `CookbookApplicationTests`
+  does.
+- Website: Vitest and Testing Library tests for the pages, the recipe form, the API client and the
+  formatting helpers. They need no backend.
+- `README.md` with setup, run modes, API reference and schema notes, and this changelog.
 
 ### Changed
 
@@ -70,13 +84,10 @@ so entries are grouped by date.
   the tables at startup and never changes the schema.
 - Deleting a category removes it from its recipes instead of failing.
 - Recipe numeric fields use `Integer`, and `createdAt` is an `Instant` set automatically on insert.
+- `mvn spring-boot:run` and `mvn package` now also build the website. The first run downloads Node,
+  and every run takes a few seconds longer unless `-DskipFrontend` is set.
 
 ### Fixed
-
-- Frontend error messages when the server can't be reached: "Can't reach the server" instead of
-  the browser's "Failed to fetch", and "The backend isn't responding" when the Vite proxy can't
-  reach Spring Boot. Network errors are now retried like server errors.
-- The category picker no longer says "No categories yet" next to a load error.
 
 - The database password is read from the `POSTGRESQL_PW` environment variable.
 - Entities store the name passed to their constructor and have the no-argument constructor JPA
@@ -85,6 +96,10 @@ so entries are grouped by date.
 - Creating a category, ingredient or recipe with an existing name returns 409.
 - Removed duplicate category methods from `RecipeService`.
 - Removed the redundant `flyway-core` dependency (`flyway-database-postgresql` already brings it in).
+- Website error messages when the server can't be reached: "Can't reach the server" instead of the
+  browser's "Failed to fetch", and "The backend isn't responding" when the Vite dev server can't
+  reach Spring Boot. Network errors are now retried like server errors.
+- The category picker no longer says "No categories yet" next to a load error.
 
 ### Upgrade notes
 
@@ -92,3 +107,5 @@ so entries are grouped by date.
   the schema isn't empty. With no data worth keeping, drop the old tables once:
   `DROP TABLE IF EXISTS recipe, category, ingredient, flyway_schema_history CASCADE;`
 - Set `POSTGRESQL_PW` in your shell (e.g. `~/.zshrc`) and in the IntelliJ run configuration.
+- Running from IntelliJ skips the Maven plugins, so the website is only served if it was built with
+  Maven since the last clean (`mvn generate-resources` is enough). The API works either way.
