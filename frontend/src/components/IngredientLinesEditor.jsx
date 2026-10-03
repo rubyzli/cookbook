@@ -1,4 +1,5 @@
 import { useIngredients } from '../api/queries.js'
+import { useI18n } from '../i18n/context.js'
 import { lineField, newLine } from '../utils/recipeForm.js'
 
 const COMMON_UNITS = ['g', 'kg', 'ml', 'l', 'tsp', 'tbsp', 'cup', 'cups', 'pinch', 'clove', 'slice', 'can']
@@ -6,6 +7,7 @@ const COMMON_UNITS = ['g', 'kg', 'ml', 'l', 'tsp', 'tbsp', 'cup', 'cups', 'pinch
 // One row per ingredient line: name (with suggestions from existing ingredients), amount, unit,
 // and buttons to reorder or remove the row. A name that doesn't exist yet is created on save.
 export default function IngredientLinesEditor({ lines, onChange, errors }) {
+  const { t } = useI18n()
   const ingredients = useIngredients()
 
   function update(key, field, value) {
@@ -25,11 +27,8 @@ export default function IngredientLinesEditor({ lines, onChange, errors }) {
 
   return (
     <fieldset className="form-section">
-      <legend>Ingredients</legend>
-      <p className="field-hint">
-        Start typing to pick an existing ingredient. New ones are added when you save. Amount and unit
-        are optional.
-      </p>
+      <legend>{t('form.ingredients')}</legend>
+      <p className="field-hint">{t('form.ingredientsHint')}</p>
 
       <datalist id="ingredient-options">
         {ingredients.data?.map((ingredient) => (
@@ -54,8 +53,8 @@ export default function IngredientLinesEditor({ lines, onChange, errors }) {
                 className="ingredient-amount"
                 type="text"
                 inputMode="decimal"
-                placeholder="Amount"
-                aria-label={`Amount ${number}`}
+                placeholder={t('form.amount')}
+                aria-label={t('form.amountN', { n: number })}
                 aria-invalid={errors[lineField(line, 'amount')] ? true : undefined}
                 value={line.amount}
                 onChange={(event) => update(line.key, 'amount', event.target.value)}
@@ -64,8 +63,8 @@ export default function IngredientLinesEditor({ lines, onChange, errors }) {
                 className="ingredient-unit"
                 type="text"
                 list="unit-options"
-                placeholder="Unit"
-                aria-label={`Unit ${number}`}
+                placeholder={t('form.unit')}
+                aria-label={t('form.unitN', { n: number })}
                 aria-invalid={errors[lineField(line, 'unit')] ? true : undefined}
                 value={line.unit}
                 onChange={(event) => update(line.key, 'unit', event.target.value)}
@@ -74,8 +73,8 @@ export default function IngredientLinesEditor({ lines, onChange, errors }) {
                 className="ingredient-name"
                 type="text"
                 list="ingredient-options"
-                placeholder="Ingredient"
-                aria-label={`Ingredient ${number}`}
+                placeholder={t('form.ingredient')}
+                aria-label={t('form.ingredientN', { n: number })}
                 aria-invalid={errors[lineField(line, 'name')] ? true : undefined}
                 value={line.name}
                 onChange={(event) => update(line.key, 'name', event.target.value)}
@@ -84,7 +83,7 @@ export default function IngredientLinesEditor({ lines, onChange, errors }) {
                 <button
                   type="button"
                   className="icon-button"
-                  aria-label={`Move ingredient ${number} up`}
+                  aria-label={t('form.moveUp', { n: number })}
                   disabled={index === 0}
                   onClick={() => move(index, -1)}
                 >
@@ -93,7 +92,7 @@ export default function IngredientLinesEditor({ lines, onChange, errors }) {
                 <button
                   type="button"
                   className="icon-button"
-                  aria-label={`Move ingredient ${number} down`}
+                  aria-label={t('form.moveDown', { n: number })}
                   disabled={index === lines.length - 1}
                   onClick={() => move(index, 1)}
                 >
@@ -102,7 +101,7 @@ export default function IngredientLinesEditor({ lines, onChange, errors }) {
                 <button
                   type="button"
                   className="icon-button"
-                  aria-label={`Remove ingredient ${number}`}
+                  aria-label={t('form.remove', { n: number })}
                   onClick={() => remove(line.key)}
                 >
                   ×
@@ -117,7 +116,7 @@ export default function IngredientLinesEditor({ lines, onChange, errors }) {
       </ol>
 
       <button type="button" className="button" onClick={() => onChange([...lines, newLine()])}>
-        + Add ingredient
+        {t('form.addIngredient')}
       </button>
     </fieldset>
   )

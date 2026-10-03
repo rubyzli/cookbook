@@ -80,12 +80,22 @@ Pages:
 - `/recipes/{id}` shows a recipe with its times, categories, ingredients and numbered steps.
   Each line of a recipe's instructions is shown as one step. Edit and Delete buttons are at the top;
   Delete asks for confirmation first.
+- `/manage` lists categories and ingredients side by side, with how many recipes use each. Both
+  can be added, filtered and renamed. Deleting a category removes it from its recipes (the
+  confirmation says how many); an ingredient can't be deleted while a recipe uses it.
 - `/recipes/new` and `/recipes/{id}/edit` are the recipe form:
   - Categories are toggled on and off, and a new one can be added right in the form.
   - Ingredient names are typed with suggestions from existing ingredients. Names that don't exist
     yet are created when the recipe is saved. Lines can be reordered, and amount and unit are optional.
   - The form checks the same rules as the backend before sending, and shows any errors the backend
     returns next to the field they belong to.
+
+The site is available in English, German and Hungarian, picked with the menu in the header. The
+first visit uses the browser's language (English if it isn't one of the three) and the choice is
+remembered in the browser. Only the site's own text is translated; recipes appear as entered. The
+texts live in `frontend/src/i18n/messages/`, one file per language with the same keys; a test
+checks that every language has every key. API requests send the language as `Accept-Language`, so
+the backend's validation messages match it.
 
 Other commands, all run in `frontend/`:
 
@@ -139,16 +149,19 @@ ingredient can appear on more than one line.
 
 | Method | Path                    | Description                     |
 |--------|-------------------------|---------------------------------|
-| GET    | `/api/categories`       | List all categories             |
+| GET    | `/api/categories`       | List all categories by name, each with `recipeCount` |
 | GET    | `/api/categories/{id}`  | Get a category (404 if none)    |
 | POST   | `/api/categories`       | Create a category               |
+| PUT    | `/api/categories/{id}`  | Rename a category (404 if none, 409 if the name is taken) |
 | DELETE | `/api/categories/{id}`  | Delete a category and remove it from its recipes |
-| GET    | `/api/ingredients`      | List all ingredients            |
+| GET    | `/api/ingredients`      | List all ingredients by name, each with `recipeCount` |
 | GET    | `/api/ingredients/{id}` | Get an ingredient (404 if none) |
 | POST   | `/api/ingredients`      | Create an ingredient            |
+| PUT    | `/api/ingredients/{id}` | Rename an ingredient (404 if none, 409 if the name is taken) |
 | DELETE | `/api/ingredients/{id}` | Delete an ingredient (409 while a recipe uses it) |
 
-Create requests take a JSON body with a name, e.g. `{"name": "Dessert"}`.
+Create and rename take a JSON body with a name, e.g. `{"name": "Dessert"}`. List entries look like
+`{"id": "...", "name": "Dessert", "recipeCount": 3}`.
 
 ### Errors
 
@@ -181,7 +194,8 @@ src/main/java/family/cookbook/
 
 frontend/src/
 ├── api/           fetch wrapper (client.js) and TanStack Query hooks (queries.js)
-├── components/    Layout, recipe card, recipe form and its parts, shared bits
+├── components/    Layout, recipe card, recipe form and its parts, editable name lists
+├── i18n/          Translations (messages/en.js, de.js, hu.js) and the language switcher logic
 ├── pages/         One component per route, with its tests next to it
 ├── utils/         Formatting, and recipe form logic (validation, request building)
 └── test/          Test setup and helpers (renderApp, mockApi)

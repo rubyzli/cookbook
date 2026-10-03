@@ -8,6 +8,9 @@ import {
   toRequest,
   validateForm,
 } from './recipeForm.js'
+import { createTranslator } from '../i18n/translate.js'
+
+const en = createTranslator('en')
 
 function form(overrides = {}) {
   return { ...emptyForm(), name: 'Pie', ...overrides }
@@ -49,15 +52,15 @@ describe('formFromRecipe', () => {
 
 describe('validateForm', () => {
   it('accepts a form with just a name', () => {
-    expect(validateForm(form())).toEqual({})
+    expect(validateForm(form(), en)).toEqual({})
   })
 
   it('requires a name', () => {
-    expect(validateForm(form({ name: '   ' }))).toEqual({ name: 'Give the recipe a name.' })
+    expect(validateForm(form({ name: '   ' }), en)).toEqual({ name: 'Give the recipe a name.' })
   })
 
   it('limits text lengths to the database columns', () => {
-    const errors = validateForm(form({ name: 'x'.repeat(256), description: 'x'.repeat(256) }))
+    const errors = validateForm(form({ name: 'x'.repeat(256), description: 'x'.repeat(256) }), en)
 
     expect(errors.name).toBe('Keep this under 255 characters.')
     expect(errors.description).toBe('Keep this under 255 characters.')
@@ -69,33 +72,40 @@ describe('validateForm', () => {
     ['prepTimeMinutes', '-5', 'Use a whole number, 0 or more.'],
     ['cookTimeMinutes', 'abc', 'Use a whole number, 0 or more.'],
   ])('rejects %s = "%s"', (field, value, message) => {
-    expect(validateForm(form({ [field]: value }))[field]).toBe(message)
+    expect(validateForm(form({ [field]: value }), en)[field]).toBe(message)
   })
 
   it('allows zero minutes and blank numbers', () => {
-    expect(validateForm(form({ prepTimeMinutes: '0', cookTimeMinutes: '', servings: ' 4 ' }))).toEqual({})
+    expect(validateForm(form({ prepTimeMinutes: '0', cookTimeMinutes: '', servings: ' 4 ' }), en)).toEqual({})
   })
 
   it('ignores completely empty ingredient lines', () => {
-    expect(validateForm(form({ lines: [newLine(), newLine({ name: 'Flour' })] }))).toEqual({})
+    expect(validateForm(form({ lines: [newLine(), newLine({ name: 'Flour' })] }), en)).toEqual({})
   })
 
   it('needs an ingredient name when amount or unit is filled in', () => {
     const line = newLine({ amount: '2', unit: 'cups' })
 
-    expect(validateForm(form({ lines: [line] }))).toEqual({ [lineField(line, 'name')]: 'Enter an ingredient.' })
+    expect(validateForm(form({ lines: [line] }), en)).toEqual({ [lineField(line, 'name')]: 'Enter an ingredient.' })
   })
 
   it.each(['1', '1.5', '1,5', '0.25', '12345678.99'])('accepts amount "%s"', (amount) => {
-    expect(validateForm(form({ lines: [newLine({ name: 'Flour', amount })] }))).toEqual({})
+    expect(validateForm(form({ lines: [newLine({ name: 'Flour', amount })] }), en)).toEqual({})
   })
 
   it.each(['1.234', '-1', 'two', '123456789'])('rejects amount "%s"', (amount) => {
     const line = newLine({ name: 'Flour', amount })
 
-    expect(validateForm(form({ lines: [line] }))[lineField(line, 'amount')]).toBe(
+    expect(validateForm(form({ lines: [line] }), en)[lineField(line, 'amount')]).toBe(
       'Use a number with up to 2 decimals.',
     )
+  })
+})
+
+describe('validateForm in other languages', () => {
+  it('returns messages in the translator’s language', () => {
+    expect(validateForm(form({ name: '' }), createTranslator('de'))).toEqual({ name: 'Gib dem Rezept einen Namen.' })
+    expect(validateForm(form({ name: '' }), createTranslator('hu'))).toEqual({ name: 'Adj nevet a receptnek.' })
   })
 })
 

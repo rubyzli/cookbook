@@ -67,12 +67,42 @@ export function useDeleteRecipe(id) {
   })
 }
 
-export function useCreateCategory() {
+// Create, rename and delete for the simple named lists. `kind` is 'categories' or 'ingredients'.
+// Renames and deletes also refresh recipes, which show these names.
+export function useCreateItem(kind) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (name) => apiSend('POST', '/api/categories', { name }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['categories'] }),
+    mutationFn: (name) => apiSend('POST', `/api/${kind}`, { name }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [kind] }),
   })
+}
+
+export function useRenameItem(kind) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, name }) => apiSend('PUT', `/api/${kind}/${id}`, { name }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: [kind] }),
+        queryClient.invalidateQueries({ queryKey: ['recipes'] }),
+      ]),
+  })
+}
+
+export function useDeleteItem(kind) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id) => apiSend('DELETE', `/api/${kind}/${id}`),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: [kind] }),
+        queryClient.invalidateQueries({ queryKey: ['recipes'] }),
+      ]),
+  })
+}
+
+export function useCreateCategory() {
+  return useCreateItem('categories')
 }
 
 // Returns a Map from lower-cased ingredient name to id, creating any names that don't exist yet.

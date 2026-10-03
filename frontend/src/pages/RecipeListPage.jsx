@@ -3,10 +3,13 @@ import { Link, useSearchParams } from 'react-router'
 import { useCategories, useRecipes } from '../api/queries.js'
 import RecipeCard from '../components/RecipeCard.jsx'
 import StatusMessage from '../components/StatusMessage.jsx'
+import { useI18n } from '../i18n/context.js'
+import { errorMessage } from '../i18n/errors.js'
 
 const SEARCH_DELAY_MS = 300
 
 export default function RecipeListPage() {
+  const { t } = useI18n()
   // Search and filter live in the URL so they survive reloads and can be linked to
   const [searchParams, setSearchParams] = useSearchParams()
   const search = searchParams.get('search') ?? ''
@@ -37,37 +40,33 @@ export default function RecipeListPage() {
   return (
     <>
       <div className="page-heading">
-        <h1>Recipes</h1>
-        {recipes.data && (
-          <p className="count">
-            {recipes.data.length} {recipes.data.length === 1 ? 'recipe' : 'recipes'}
-          </p>
-        )}
+        <h1>{t('list.title')}</h1>
+        {recipes.data && <p className="count">{t('list.count', { count: recipes.data.length })}</p>}
         <Link to="/recipes/new" className="button primary new-recipe">
-          + New recipe
+          {t('list.newRecipe')}
         </Link>
       </div>
 
       <div className="toolbar" role="search">
         <label className="visually-hidden" htmlFor="recipe-search">
-          Search recipes
+          {t('list.searchLabel')}
         </label>
         <input
           id="recipe-search"
           type="search"
-          placeholder="Search recipes…"
+          placeholder={t('list.searchPlaceholder')}
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
         />
         <label className="visually-hidden" htmlFor="recipe-category">
-          Category
+          {t('list.categoryLabel')}
         </label>
         <select
           id="recipe-category"
           value={categoryId}
           onChange={(event) => updateParam(setSearchParams, 'categoryId', event.target.value)}
         >
-          <option value="">All categories</option>
+          <option value="">{t('list.allCategories')}</option>
           {categories.data?.map((category) => (
             <option key={category.id} value={category.id}>
               {category.name}
@@ -93,14 +92,15 @@ function updateParam(setSearchParams, name, value) {
 }
 
 function RecipeResults({ query, filtered }) {
+  const { t } = useI18n()
   if (query.isPending) {
-    return <StatusMessage>Loading recipes…</StatusMessage>
+    return <StatusMessage>{t('list.loading')}</StatusMessage>
   }
   if (query.isError) {
     return (
       <StatusMessage role="alert">
-        <p>Couldn’t load recipes.</p>
-        <p className="hint">{query.error.message}</p>
+        <p>{t('list.loadFailed')}</p>
+        <p className="hint">{errorMessage(query.error, t)}</p>
       </StatusMessage>
     )
   }
@@ -108,11 +108,11 @@ function RecipeResults({ query, filtered }) {
     return (
       <StatusMessage>
         {filtered ? (
-          'No recipes match your search.'
+          t('list.noMatches')
         ) : (
           <>
-            <p>No recipes yet.</p>
-            <Link to="/recipes/new">Add the first one</Link>
+            <p>{t('list.empty')}</p>
+            <Link to="/recipes/new">{t('list.addFirst')}</Link>
           </>
         )}
       </StatusMessage>

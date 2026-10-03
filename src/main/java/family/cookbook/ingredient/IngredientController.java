@@ -1,6 +1,7 @@
 package family.cookbook.ingredient;
 
-import family.cookbook.ingredient.dto.CreateIngredientRequest;
+import family.cookbook.ingredient.dto.IngredientListItem;
+import family.cookbook.ingredient.dto.IngredientRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ public class IngredientController {
     }
 
     @GetMapping
-    public List<Ingredient> getAllIngredients() {
+    public List<IngredientListItem> getAllIngredients() {
         return ingredientService.getAllIngredients();
     }
 
@@ -31,8 +32,13 @@ public class IngredientController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Ingredient createIngredient(@Valid @RequestBody CreateIngredientRequest request) {
+    public Ingredient createIngredient(@Valid @RequestBody IngredientRequest request) {
         return ingredientService.createIngredient(request.name());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Ingredient> renameIngredient(@PathVariable UUID id, @Valid @RequestBody IngredientRequest request) {
+        return ResponseEntity.of(ingredientService.renameIngredient(id, request.name()));
     }
 
     @DeleteMapping("/{id}")

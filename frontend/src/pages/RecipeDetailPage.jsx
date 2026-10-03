@@ -5,16 +5,19 @@ import CategoryChips from '../components/CategoryChips.jsx'
 import RecipeImage from '../components/RecipeImage.jsx'
 import RecipeMeta from '../components/RecipeMeta.jsx'
 import StatusMessage from '../components/StatusMessage.jsx'
+import { useI18n } from '../i18n/context.js'
+import { errorMessage } from '../i18n/errors.js'
 import { formatAmount } from '../utils/format.js'
 
 export default function RecipeDetailPage() {
+  const { t } = useI18n()
   const { id } = useParams()
   const recipe = useRecipe(id)
 
   return (
     <>
       <Link to="/" className="back-link">
-        ← All recipes
+        {t('common.backToRecipes')}
       </Link>
       <RecipeDetailContent query={recipe} />
     </>
@@ -22,8 +25,9 @@ export default function RecipeDetailPage() {
 }
 
 function RecipeDetailContent({ query }) {
+  const { t, language } = useI18n()
   if (query.isPending) {
-    return <StatusMessage>Loading recipe…</StatusMessage>
+    return <StatusMessage>{t('common.loadingRecipe')}</StatusMessage>
   }
   if (query.isError) {
     // A malformed id gets a 400 from the backend; treat it the same as a missing recipe
@@ -31,11 +35,11 @@ function RecipeDetailContent({ query }) {
     return (
       <StatusMessage role="alert">
         {missing ? (
-          <p>This recipe doesn’t exist. It may have been deleted.</p>
+          <p>{t('common.recipeMissing')}</p>
         ) : (
           <>
-            <p>Couldn’t load this recipe.</p>
-            <p className="hint">{query.error.message}</p>
+            <p>{t('detail.loadFailed')}</p>
+            <p className="hint">{errorMessage(query.error, t)}</p>
           </>
         )}
       </StatusMessage>
@@ -59,15 +63,15 @@ function RecipeDetailContent({ query }) {
 
       <div className="recipe-detail-body">
         <section aria-labelledby="ingredients-heading">
-          <h2 id="ingredients-heading">Ingredients</h2>
+          <h2 id="ingredients-heading">{t('detail.ingredients')}</h2>
           {recipe.ingredients.length === 0 ? (
-            <p className="hint">No ingredients listed.</p>
+            <p className="hint">{t('detail.noIngredients')}</p>
           ) : (
             <ul className="ingredient-list">
               {recipe.ingredients.map((line, index) => (
                 // Index as key: the same ingredient can appear on several lines
                 <li key={index}>
-                  <span className="amount">{formatAmount(line.amount, line.unit)}</span>{' '}
+                  <span className="amount">{formatAmount(line.amount, line.unit, language)}</span>{' '}
                   {line.name}
                 </li>
               ))}
@@ -76,7 +80,7 @@ function RecipeDetailContent({ query }) {
         </section>
 
         <section aria-labelledby="instructions-heading">
-          <h2 id="instructions-heading">Instructions</h2>
+          <h2 id="instructions-heading">{t('detail.instructions')}</h2>
           <Instructions text={recipe.instructions} />
         </section>
       </div>
@@ -86,6 +90,7 @@ function RecipeDetailContent({ query }) {
 
 // Delete asks for confirmation in place, since browser confirm() dialogs are easy to click through
 function RecipeActions({ recipe }) {
+  const { t } = useI18n()
   const [confirming, setConfirming] = useState(false)
   const deleteRecipe = useDeleteRecipe(recipe.id)
   const navigate = useNavigate()
@@ -101,17 +106,17 @@ function RecipeActions({ recipe }) {
 
   if (confirming) {
     return (
-      <div className="recipe-actions confirm" role="group" aria-label="Confirm delete">
-        <span>Delete “{recipe.name}”? This can’t be undone.</span>
+      <div className="recipe-actions confirm" role="group" aria-label={t('detail.confirmDeleteLabel')}>
+        <span>{t('detail.confirmDelete', { name: recipe.name })}</span>
         <button type="button" className="button danger" onClick={confirmDelete} disabled={deleteRecipe.isPending}>
-          {deleteRecipe.isPending ? 'Deleting…' : 'Yes, delete'}
+          {deleteRecipe.isPending ? t('detail.deleting') : t('detail.confirmDeleteYes')}
         </button>
         <button type="button" className="button ghost" onClick={() => setConfirming(false)}>
-          Cancel
+          {t('common.cancel')}
         </button>
         {deleteRecipe.isError && (
           <p className="field-error" role="alert">
-            Couldn’t delete: {deleteRecipe.error.message}
+            {t('detail.deleteFailed', { message: errorMessage(deleteRecipe.error, t) })}
           </p>
         )}
       </div>
@@ -120,10 +125,10 @@ function RecipeActions({ recipe }) {
   return (
     <div className="recipe-actions">
       <Link to={`/recipes/${recipe.id}/edit`} className="button">
-        Edit
+        {t('detail.edit')}
       </Link>
       <button type="button" className="button ghost danger-text" onClick={() => setConfirming(true)}>
-        Delete
+        {t('detail.delete')}
       </button>
     </div>
   )
@@ -131,9 +136,10 @@ function RecipeActions({ recipe }) {
 
 // Each non-empty line is a step; a single line stays a paragraph
 function Instructions({ text }) {
+  const { t } = useI18n()
   const steps = (text ?? '').split('\n').map((line) => line.trim()).filter(Boolean)
   if (steps.length === 0) {
-    return <p className="hint">No instructions yet.</p>
+    return <p className="hint">{t('detail.noInstructions')}</p>
   }
   if (steps.length === 1) {
     return <p className="instructions">{steps[0]}</p>

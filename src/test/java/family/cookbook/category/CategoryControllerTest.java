@@ -1,5 +1,6 @@
 package family.cookbook.category;
 
+import family.cookbook.category.dto.CategoryListItem;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -35,13 +37,16 @@ class CategoryControllerTest {
     private CategoryService categoryService;
 
     @Test
-    void getAllCategoriesReturnsList() throws Exception {
-        when(categoryService.getAllCategories()).thenReturn(List.of(category("Desserts")));
+    void getAllCategoriesReturnsListWithRecipeCounts() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(categoryService.getAllCategories()).thenReturn(List.of(new CategoryListItem(id, "Desserts", 3)));
 
         mockMvc.perform(get("/api/categories"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].name").value("Desserts"));
+                .andExpect(jsonPath("$[0].id").value(id.toString()))
+                .andExpect(jsonPath("$[0].name").value("Desserts"))
+                .andExpect(jsonPath("$[0].recipeCount").value(3));
     }
 
     @Test
@@ -126,5 +131,50 @@ class CategoryControllerTest {
         Category category = new Category(name);
         category.setId(UUID.randomUUID());
         return category;
+    }
+
+    @Test
+    void renameCategoryReturnsRenamed() throws Exception {
+        Category renamed = category("Renamed");
+        when(categoryService.renameCategory(renamed.getId(), "Renamed")).thenReturn(Optional.of(renamed));
+
+        mockMvc.perform(put("/api/categories/{id}", renamed.getId())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Renamed\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Renamed"));
+    }
+
+    @Test
+    void renameCategoryReturns404WhenMissing() throws Exception {
+        when(categoryService.renameCategory(any(), anyString())).thenReturn(Optional.empty());
+
+        mockMvc.perform(put("/api/categories/{id}", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Renamed\"}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void renameCategoryReturns400ForBlankName() throws Exception {
+        mockMvc.perform(put("/api/categories/{id}", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.name").exists());
+
+        verify(categoryService, never()).renameCategory(any(), anyString());
+    }
+
+    @Test
+    void renameCategoryReturns409WhenNameTaken() throws Exception {
+        when(categoryService.renameCategory(any(), anyString()))
+                .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Category already exists"));
+
+        mockMvc.perform(put("/api/categories/{id}", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Taken\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("Category already exists"));
     }
 }

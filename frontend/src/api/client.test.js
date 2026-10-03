@@ -55,6 +55,7 @@ describe('apiGet', () => {
     const error = await apiGet('/api/recipes').catch((e) => e)
 
     expect(error.status).toBe(502)
+    expect(error.kind).toBe('gateway')
     expect(error.message).toBe('The backend isn’t responding. Check that it’s running on port 8080.')
   })
 
@@ -76,6 +77,7 @@ describe('apiSend', () => {
     const error = await apiSend('POST', '/api/categories', { name: 'Test' }).catch((e) => e)
 
     expect(error.status).toBe(NETWORK_ERROR)
+    expect(error.kind).toBe('network')
     expect(error.message).toBe('Can’t reach the server. Check that the app is running.')
   })
 

@@ -58,40 +58,40 @@ const WHOLE_NUMBER = /^\d{1,6}$/
 const AMOUNT = /^\d{1,8}([.,]\d{1,2})?$/
 
 // Mirrors the backend's validation so most mistakes are caught before a request is sent.
-// Returns { fieldName: message }, with ingredient fields keyed by lineField().
-export function validateForm(values) {
+// Returns { fieldName: message } in the language of `t`, with ingredient fields keyed by lineField().
+export function validateForm(values, t) {
   const errors = {}
 
-  if (!values.name.trim()) errors.name = 'Give the recipe a name.'
-  checkLength(errors, 'name', values.name, 255)
-  checkLength(errors, 'description', values.description, 255)
-  checkLength(errors, 'imageUrl', values.imageUrl, 255)
+  if (!values.name.trim()) errors.name = t('validation.nameRequired')
+  checkLength(errors, t, 'name', values.name, 255)
+  checkLength(errors, t, 'description', values.description, 255)
+  checkLength(errors, t, 'imageUrl', values.imageUrl, 255)
 
-  checkWholeNumber(errors, 'servings', values.servings, 1)
-  checkWholeNumber(errors, 'prepTimeMinutes', values.prepTimeMinutes, 0)
-  checkWholeNumber(errors, 'cookTimeMinutes', values.cookTimeMinutes, 0)
+  checkWholeNumber(errors, t, 'servings', values.servings, 1)
+  checkWholeNumber(errors, t, 'prepTimeMinutes', values.prepTimeMinutes, 0)
+  checkWholeNumber(errors, t, 'cookTimeMinutes', values.cookTimeMinutes, 0)
 
   for (const line of filledLines(values.lines)) {
-    if (!line.name.trim()) errors[lineField(line, 'name')] = 'Enter an ingredient.'
-    checkLength(errors, lineField(line, 'name'), line.name, 255)
+    if (!line.name.trim()) errors[lineField(line, 'name')] = t('validation.ingredientRequired')
+    checkLength(errors, t, lineField(line, 'name'), line.name, 255)
     if (line.amount.trim() && !AMOUNT.test(line.amount.trim())) {
-      errors[lineField(line, 'amount')] = 'Use a number with up to 2 decimals.'
+      errors[lineField(line, 'amount')] = t('validation.amount')
     }
-    checkLength(errors, lineField(line, 'unit'), line.unit, 50)
+    checkLength(errors, t, lineField(line, 'unit'), line.unit, 50)
   }
   return errors
 }
 
-function checkLength(errors, field, text, max) {
+function checkLength(errors, t, field, text, max) {
   if (!errors[field] && text.trim().length > max) {
-    errors[field] = `Keep this under ${max} characters.`
+    errors[field] = t('validation.tooLong', { max })
   }
 }
 
-function checkWholeNumber(errors, field, text, min) {
+function checkWholeNumber(errors, t, field, text, min) {
   const trimmed = text.trim()
   if (trimmed && (!WHOLE_NUMBER.test(trimmed) || Number(trimmed) < min)) {
-    errors[field] = min === 1 ? 'Use a whole number, 1 or more.' : 'Use a whole number, 0 or more.'
+    errors[field] = t(min === 1 ? 'validation.wholeNumberMin1' : 'validation.wholeNumberMin0')
   }
 }
 

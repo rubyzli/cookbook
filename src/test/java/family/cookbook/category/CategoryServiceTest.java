@@ -1,5 +1,6 @@
 package family.cookbook.category;
 
+import family.cookbook.category.dto.CategoryListItem;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,9 +30,11 @@ class CategoryServiceTest {
     private CategoryService categoryService;
 
     @Test
-    void getAllCategoriesReturnsEverythingFromRepository() {
-        List<Category> categories = List.of(new Category("Desserts"), new Category("Other"));
-        when(categoryRepository.findAll()).thenReturn(categories);
+    void getAllCategoriesReturnsListWithRecipeCounts() {
+        List<CategoryListItem> categories = List.of(
+                new CategoryListItem(UUID.randomUUID(), "Desserts", 3),
+                new CategoryListItem(UUID.randomUUID(), "Other", 0));
+        when(categoryRepository.findAllWithRecipeCount()).thenReturn(categories);
 
         assertThat(categoryService.getAllCategories()).isEqualTo(categories);
     }
@@ -81,5 +84,40 @@ class CategoryServiceTest {
         categoryService.deleteCategory(id);
 
         verify(categoryRepository).deleteById(id);
+    }
+
+    @Test
+    void renameCategorySavesNewName() {
+        UUID id = UUID.randomUUID();
+        Category category = new Category("Desserts");
+        when(categoryRepository.findById(id)).thenReturn(Optional.of(category));
+        when(categoryRepository.existsByNameIgnoreCaseAndIdNot("Renamed", id)).thenReturn(false);
+        when(categoryRepository.save(category)).thenReturn(category);
+
+        assertThat(categoryService.renameCategory(id, "Renamed")).hasValueSatisfying(
+                renamed -> assertThat(renamed.getName()).isEqualTo("Renamed"));
+    }
+
+    @Test
+    void renameCategoryReturnsEmptyWhenMissing() {
+        UUID id = UUID.randomUUID();
+        when(categoryRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThat(categoryService.renameCategory(id, "Renamed")).isEmpty();
+        verify(categoryRepository, never()).save(any());
+    }
+
+    @Test
+    void renameCategoryRejectsNameUsedByAnotherWithConflict() {
+        UUID id = UUID.randomUUID();
+        Category category = new Category("Desserts");
+        when(categoryRepository.findById(id)).thenReturn(Optional.of(category));
+        when(categoryRepository.existsByNameIgnoreCaseAndIdNot("Taken", id)).thenReturn(true);
+
+        assertThatThrownBy(() -> categoryService.renameCategory(id, "Taken"))
+                .isInstanceOfSatisfying(ResponseStatusException.class,
+                        ex -> assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
+        assertThat(category.getName()).isEqualTo("Desserts");
+        verify(categoryRepository, never()).save(any());
     }
 }

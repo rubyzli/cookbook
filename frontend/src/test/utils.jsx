@@ -3,18 +3,22 @@ import { render } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router'
 import { vi } from 'vitest'
 import App from '../App.jsx'
+import I18nProvider from '../i18n/I18nProvider.jsx'
 
 // Renders the whole app at `route`. Each test gets a fresh cache and no retries.
 // The current URL is exposed in a hidden element so tests can check it.
-export function renderApp(route = '/') {
+// Without `language`, the language is detected as in the browser (English under jsdom).
+export function renderApp(route = '/', { language } = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   return render(
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[route]}>
-        <App />
-        <LocationProbe />
-      </MemoryRouter>
-    </QueryClientProvider>,
+    <I18nProvider initialLanguage={language}>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[route]}>
+          <App />
+          <LocationProbe />
+        </MemoryRouter>
+      </QueryClientProvider>
+    </I18nProvider>,
   )
 }
 

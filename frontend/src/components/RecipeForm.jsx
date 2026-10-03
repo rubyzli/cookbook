@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import { Link } from 'react-router'
 import { ApiError } from '../api/client.js'
 import { findOrCreateIngredients } from '../api/queries.js'
+import { useI18n } from '../i18n/context.js'
+import { errorMessage } from '../i18n/errors.js'
 import {
   filledLines,
   formErrorsFromServer,
@@ -15,6 +17,7 @@ import IngredientLinesEditor from './IngredientLinesEditor.jsx'
 // Shared by the new and edit pages. `onSave(request)` sends the request and resolves with the
 // saved recipe; this component handles validation, creating new ingredients and showing errors.
 export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSave }) {
+  const { t } = useI18n()
   const [values, setValues] = useState(initialValues)
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState(null)
@@ -34,9 +37,9 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
 
   async function handleSubmit(event) {
     event.preventDefault()
-    const clientErrors = validateForm(values)
+    const clientErrors = validateForm(values, t)
     if (Object.keys(clientErrors).length > 0) {
-      showErrors(clientErrors, 'Please fix the highlighted fields.')
+      showErrors(clientErrors, t('form.fixFields'))
       return
     }
 
@@ -51,11 +54,11 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
       await onSave(built.request)
     } catch (error) {
       if (error instanceof ApiError && error.status === 409) {
-        showErrors({ name: 'A recipe with this name already exists.' }, 'Please fix the highlighted fields.')
+        showErrors({ name: t('form.nameTaken') }, t('form.fixFields'))
       } else if (error instanceof ApiError && Object.keys(error.errors).length > 0) {
-        showErrors(formErrorsFromServer(error.errors, lineKeys), 'Please fix the highlighted fields.')
+        showErrors(formErrorsFromServer(error.errors, lineKeys), t('form.fixFields'))
       } else {
-        showErrors({}, `Couldn’t save the recipe: ${error.message}`)
+        showErrors({}, t('form.saveFailed', { message: errorMessage(error, t) }))
       }
       setSaving(false)
     }
@@ -70,13 +73,13 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
       )}
 
       <fieldset className="form-section">
-        <legend>Basics</legend>
-        <Field label="Name" error={errors.name}>
+        <legend>{t('form.basics')}</legend>
+        <Field label={t('form.name')} error={errors.name}>
           {(props) => (
             <input {...props} type="text" value={values.name} onChange={(e) => set('name', e.target.value)} />
           )}
         </Field>
-        <Field label="Short description" hint="Shown on the recipe card." error={errors.description}>
+        <Field label={t('form.description')} hint={t('form.descriptionHint')} error={errors.description}>
           {(props) => (
             <input
               {...props}
@@ -86,7 +89,7 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
             />
           )}
         </Field>
-        <Field label="Photo URL" hint="Link to an image online. Optional." error={errors.imageUrl}>
+        <Field label={t('form.imageUrl')} hint={t('form.imageUrlHint')} error={errors.imageUrl}>
           {(props) => (
             <input
               {...props}
@@ -98,7 +101,7 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
           )}
         </Field>
         <div className="field-row">
-          <Field label="Servings" error={errors.servings}>
+          <Field label={t('form.servings')} error={errors.servings}>
             {(props) => (
               <input
                 {...props}
@@ -109,7 +112,7 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
               />
             )}
           </Field>
-          <Field label="Prep time (min)" error={errors.prepTimeMinutes}>
+          <Field label={t('form.prepTime')} error={errors.prepTimeMinutes}>
             {(props) => (
               <input
                 {...props}
@@ -120,7 +123,7 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
               />
             )}
           </Field>
-          <Field label="Cook time (min)" error={errors.cookTimeMinutes}>
+          <Field label={t('form.cookTime')} error={errors.cookTimeMinutes}>
             {(props) => (
               <input
                 {...props}
@@ -143,8 +146,8 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
       <IngredientLinesEditor lines={values.lines} onChange={(lines) => set('lines', lines)} errors={errors} />
 
       <fieldset className="form-section">
-        <legend>Instructions</legend>
-        <Field label="Steps" hint="Put each step on its own line. They’re numbered automatically." error={errors.instructions}>
+        <legend>{t('form.instructions')}</legend>
+        <Field label={t('form.steps')} hint={t('form.stepsHint')} error={errors.instructions}>
           {(props) => (
             <textarea
               {...props}
@@ -158,10 +161,10 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
 
       <div className="form-actions">
         <button type="submit" className="button primary" disabled={saving}>
-          {saving ? 'Saving…' : submitLabel}
+          {saving ? t('form.saving') : submitLabel}
         </button>
         <Link to={cancelTo} className="button ghost">
-          Cancel
+          {t('common.cancel')}
         </Link>
       </div>
     </form>

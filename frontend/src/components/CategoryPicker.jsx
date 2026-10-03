@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { useCategories, useCreateCategory } from '../api/queries.js'
+import { useI18n } from '../i18n/context.js'
+import { errorMessage } from '../i18n/errors.js'
 import { normalizeName } from '../utils/recipeForm.js'
 
 // Existing categories as toggle chips, plus a box to add a new one (which is created right away)
 export default function CategoryPicker({ selectedIds, onChange, error }) {
+  const { t } = useI18n()
   const categories = useCategories()
   const createCategory = useCreateCategory()
   const [newName, setNewName] = useState('')
@@ -32,19 +35,19 @@ export default function CategoryPicker({ selectedIds, onChange, error }) {
       select(created.id)
       setNewName('')
     } catch (e) {
-      setAddError(`Couldn’t add “${name}”: ${e.message}`)
+      setAddError(t('form.addCategoryFailed', { name, message: errorMessage(e, t) }))
     }
   }
 
   return (
     <fieldset className="form-section">
-      <legend>Categories</legend>
+      <legend>{t('common.categories')}</legend>
       {/* After a failed refetch the last good list is kept, so check isError before calling it empty */}
       {categories.isError && (
-        <p className="field-error">Couldn’t load categories: {categories.error.message}</p>
+        <p className="field-error">{t('form.categoriesLoadFailed', { message: errorMessage(categories.error, t) })}</p>
       )}
       {!categories.isError && categories.data?.length === 0 && (
-        <p className="field-hint">No categories yet. Add one below.</p>
+        <p className="field-hint">{t('form.noCategories')}</p>
       )}
       {categories.data?.length > 0 && (
         <div className="chip-options">
@@ -62,12 +65,12 @@ export default function CategoryPicker({ selectedIds, onChange, error }) {
       )}
       <div className="inline-add">
         <label className="visually-hidden" htmlFor="new-category">
-          New category
+          {t('form.newCategory')}
         </label>
         <input
           id="new-category"
           type="text"
-          placeholder="New category"
+          placeholder={t('form.newCategory')}
           value={newName}
           maxLength={255}
           onChange={(event) => setNewName(event.target.value)}
@@ -85,7 +88,7 @@ export default function CategoryPicker({ selectedIds, onChange, error }) {
           onClick={addCategory}
           disabled={!newName.trim() || createCategory.isPending}
         >
-          Add
+          {t('common.add')}
         </button>
       </div>
       {(addError || error) && <p className="field-error">{addError || error}</p>}

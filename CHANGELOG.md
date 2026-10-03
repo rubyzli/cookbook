@@ -31,7 +31,13 @@ so entries are grouped by date.
   e.g. `"ingredients[0].ingredientId": "must not be null"`.
 - 400 response listing any category or ingredient ids in a recipe request that don't exist.
 - 409 response when a name already exists (ignoring case), when two requests create the same name
-  at once, or when deleting an ingredient that a recipe still uses.
+  at once, or when deleting an ingredient that a recipe still uses ("Ingredient is used by 2
+  recipes").
+- `PUT /api/categories/{id}` and `PUT /api/ingredients/{id}` rename. Returns 404 if missing and 409
+  if another one already has the name.
+- `GET /api/categories` and `GET /api/ingredients` include `recipeCount`, the number of recipes
+  using each one, and are sorted by name.
+- Validation messages follow the request's `Accept-Language` (English, German, Hungarian).
 
 **Website** (React app in `frontend/`, plain JavaScript, built with Vite, TanStack Query and
 React Router)
@@ -49,6 +55,12 @@ React Router)
   - Checks the backend's rules before sending, shows server errors on the matching field or
     ingredient row, and moves focus to the first problem.
 - Delete button on the recipe detail page, with an in-page confirmation.
+- **Categories & ingredients page** (`/manage`, linked in the header): add, filter, rename and
+  delete both, with how many recipes use each. Deleting a category says how many recipes it will
+  be removed from; an ingredient in use can't be deleted, and the page explains why.
+- **English, German and Hungarian:** a language menu in the header translates all of the site's
+  own text, including plurals, times (`1 Std. 15 Min.`, `1 óra 15 perc`) and decimal commas
+  (`1,5 EL`). The first visit follows the browser's language; the choice is remembered.
 - Loading, empty, error and not-found states, a layout that works on phones, and light and dark
   themes that follow the system setting.
 
@@ -69,8 +81,9 @@ React Router)
 - Backend: Mockito tests for every service and `@WebMvcTest` tests for every controller, including
   which URLs `FrontendController` forwards. They need no database; only `CookbookApplicationTests`
   does.
-- Website: Vitest and Testing Library tests for the pages, the recipe form, the API client and the
-  formatting helpers. They need no backend.
+- Website: Vitest and Testing Library tests for the pages, the recipe form, the categories and
+  ingredients page, the language switcher, the API client and the formatting helpers, plus a check
+  that every language has every text. They need no backend.
 - `README.md` with setup, run modes, API reference and schema notes, and this changelog.
 
 ### Changed
@@ -84,6 +97,8 @@ React Router)
   the tables at startup and never changes the schema.
 - Deleting a category removes it from its recipes instead of failing.
 - Recipe numeric fields use `Integer`, and `createdAt` is an `Instant` set automatically on insert.
+- `CreateCategoryRequest` and `CreateIngredientRequest` are now `CategoryRequest` and
+  `IngredientRequest`, used for both create and rename. Names are limited to 255 characters.
 - `mvn spring-boot:run` and `mvn package` now also build the website. The first run downloads Node,
   and every run takes a few seconds longer unless `-DskipFrontend` is set.
 

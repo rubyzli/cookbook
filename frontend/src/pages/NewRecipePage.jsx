@@ -1,9 +1,11 @@
 import { Link, useNavigate } from 'react-router'
 import { useCreateRecipe } from '../api/queries.js'
 import RecipeForm from '../components/RecipeForm.jsx'
+import { useI18n } from '../i18n/context.js'
 import { emptyForm } from '../utils/recipeForm.js'
 
 export default function NewRecipePage() {
+  const { t } = useI18n()
   const createRecipe = useCreateRecipe()
   const navigate = useNavigate()
 
@@ -15,10 +17,10 @@ export default function NewRecipePage() {
   return (
     <>
       <Link to="/" className="back-link">
-        ← All recipes
+        {t('common.backToRecipes')}
       </Link>
-      <h1 className="form-title">New recipe</h1>
-      <RecipeForm initialValues={emptyForm()} submitLabel="Create recipe" cancelTo="/" onSave={save} />
+      <h1 className="form-title">{t('form.newTitle')}</h1>
+      <RecipeForm initialValues={emptyForm()} submitLabel={t('form.create')} cancelTo="/" onSave={save} />
     </>
   )
 }

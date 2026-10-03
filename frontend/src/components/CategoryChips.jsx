@@ -1,11 +1,13 @@
 import { Link } from 'react-router'
+import { useI18n } from '../i18n/context.js'
 
 // Chips link to the recipe list filtered by that category, unless linked={false}
 // (e.g. inside a card that is already a link, where nested links aren't allowed)
 export default function CategoryChips({ categories, linked = true }) {
+  const { t } = useI18n()
   if (categories.length === 0) return null
   return (
-    <ul className="chips" aria-label="Categories">
+    <ul className="chips" aria-label={t('common.categories')}>
       {categories.map((category) => (
         <li key={category.id}>
           {linked ? (

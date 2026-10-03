@@ -7,4 +7,6 @@ expect.extend(matchers)
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
+  // The chosen language is remembered in localStorage; start each test from the browser default
+  localStorage.clear()
 })

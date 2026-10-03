@@ -1,6 +1,7 @@
 package family.cookbook.category;
 
-import family.cookbook.category.dto.CreateCategoryRequest;
+import family.cookbook.category.dto.CategoryListItem;
+import family.cookbook.category.dto.CategoryRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +21,7 @@ public class CategoryController {
     }
 
     @GetMapping
-    public List<Category> getAllCategories() {
+    public List<CategoryListItem> getAllCategories() {
         return categoryService.getAllCategories();
     }
 
@@ -31,8 +32,13 @@ public class CategoryController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Category createCategory(@Valid @RequestBody CreateCategoryRequest request) {
+    public Category createCategory(@Valid @RequestBody CategoryRequest request) {
         return categoryService.createCategory(request.name());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Category> renameCategory(@PathVariable UUID id, @Valid @RequestBody CategoryRequest request) {
+        return ResponseEntity.of(categoryService.renameCategory(id, request.name()));
     }
 
     @DeleteMapping("/{id}")
