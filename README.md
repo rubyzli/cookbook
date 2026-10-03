@@ -39,30 +39,64 @@ Built with Spring Boot 4.1, Java 21, Spring Data JPA and Flyway.
 
 ## API
 
-| Method | Path                    | Description                 |
-|--------|-------------------------|-----------------------------|
-| GET    | `/api/recipes`          | List all recipes            |
-| GET    | `/api/recipes/{id}`     | Get a recipe (404 if none)  |
-| POST   | `/api/recipes`          | Create a recipe             |
-| DELETE | `/api/recipes/{id}`     | Delete a recipe             |
-| GET    | `/api/categories`       | List all categories         |
-| GET    | `/api/categories/{id}`  | Get a category (404 if none)|
-| POST   | `/api/categories`       | Create a category           |
-| DELETE | `/api/categories/{id}`  | Delete a category           |
-| GET    | `/api/ingredients`      | List all ingredients        |
-| GET    | `/api/ingredients/{id}` | Get an ingredient (404 if none)|
-| POST   | `/api/ingredients`      | Create an ingredient        |
-| DELETE | `/api/ingredients/{id}` | Delete an ingredient        |
+### Recipes
 
-Create requests take a JSON body with a name:
+| Method | Path                | Description                                                        |
+|--------|---------------------|--------------------------------------------------------------------|
+| GET    | `/api/recipes`      | List recipes as summaries, sorted by name. Optional `?search=` (name contains, any case) and `?categoryId=` |
+| GET    | `/api/recipes/{id}` | Full recipe with categories and ingredient lines (404 if none)     |
+| POST   | `/api/recipes`      | Create a recipe (201)                                              |
+| PUT    | `/api/recipes/{id}` | Replace a recipe, including its categories and ingredients (404 if none) |
+| DELETE | `/api/recipes/{id}` | Delete a recipe (204)                                              |
+
+POST and PUT take the same body. Only `name` is required; missing lists count as empty:
 
 ```sh
 curl -X POST http://localhost:8080/api/recipes \
   -H 'Content-Type: application/json' \
-  -d '{"name": "Lasagna"}'
+  -d '{
+        "name": "Apple Pie",
+        "description": "Grandma'"'"'s recipe",
+        "servings": 8,
+        "prepTimeMinutes": 30,
+        "cookTimeMinutes": 45,
+        "instructions": "Mix. Bake.",
+        "imageUrl": null,
+        "categoryIds": ["<category id>"],
+        "ingredients": [
+          {"ingredientId": "<flour id>", "amount": 250, "unit": "g"},
+          {"ingredientId": "<salt id>"}
+        ]
+      }'
 ```
 
-A blank name returns `400`. A name that already exists (ignoring case) returns `409`.
+Ingredient lines keep the order they're sent in. `amount` and `unit` are optional, and the same
+ingredient can appear on more than one line.
+
+### Categories and ingredients
+
+| Method | Path                    | Description                     |
+|--------|-------------------------|---------------------------------|
+| GET    | `/api/categories`       | List all categories             |
+| GET    | `/api/categories/{id}`  | Get a category (404 if none)    |
+| POST   | `/api/categories`       | Create a category               |
+| DELETE | `/api/categories/{id}`  | Delete a category and remove it from its recipes |
+| GET    | `/api/ingredients`      | List all ingredients            |
+| GET    | `/api/ingredients/{id}` | Get an ingredient (404 if none) |
+| POST   | `/api/ingredients`      | Create an ingredient            |
+| DELETE | `/api/ingredients/{id}` | Delete an ingredient (409 while a recipe uses it) |
+
+Create requests take a JSON body with a name, e.g. `{"name": "Dessert"}`.
+
+### Errors
+
+Errors are returned as [problem details](https://www.rfc-editor.org/rfc/rfc9457) with the reason in
+`detail`:
+
+- `400` for validation failures, with an `errors` map from field to message:
+  `{"detail": "Validation failed", "errors": {"name": "must not be blank", "ingredients[0].ingredientId": "must not be null"}}`
+- `400` for category or ingredient ids that don't exist
+- `409` when a name already exists (ignoring case), or when deleting an ingredient that's still in use
 
 ## Database schema
 

@@ -1,7 +1,9 @@
 package family.cookbook.recipe;
 
 
-import family.cookbook.recipe.dto.CreateRecipeRequest;
+import family.cookbook.recipe.dto.RecipeDetail;
+import family.cookbook.recipe.dto.RecipeRequest;
+import family.cookbook.recipe.dto.RecipeSummary;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,19 +23,25 @@ public class RecipeController {
     }
 
     @GetMapping
-    public List<Recipe> getAllRecipes() {
-        return recipeService.getAllRecipes();
+    public List<RecipeSummary> searchRecipes(@RequestParam(defaultValue = "") String search,
+                                             @RequestParam(required = false) UUID categoryId) {
+        return recipeService.searchRecipes(search, categoryId);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Recipe> getRecipeById(@PathVariable UUID id) {
+    public ResponseEntity<RecipeDetail> getRecipeById(@PathVariable UUID id) {
         return ResponseEntity.of(recipeService.getRecipeById(id));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Recipe createRecipe(@Valid @RequestBody CreateRecipeRequest request) {
-        return recipeService.createRecipe(request.name());
+    public RecipeDetail createRecipe(@Valid @RequestBody RecipeRequest request) {
+        return recipeService.createRecipe(request);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<RecipeDetail> updateRecipe(@PathVariable UUID id, @Valid @RequestBody RecipeRequest request) {
+        return ResponseEntity.of(recipeService.updateRecipe(id, request));
     }
 
     @DeleteMapping("/{id}")
