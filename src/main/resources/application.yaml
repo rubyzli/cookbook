@@ -12,3 +12,8 @@ spring:
 
   flyway:
     enabled: true
+
+cookbook:
+  # Folder whose files are served at /images/..., for recipe photos. Kept outside the project so
+  # photos aren't committed or packaged; set COOKBOOK_IMAGES_DIR to use another folder.
+  images-dir: ${COOKBOOK_IMAGES_DIR:${user.home}/cookbook-images}

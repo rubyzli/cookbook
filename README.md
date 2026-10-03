@@ -47,6 +47,13 @@ A family cookbook: recipes, categories and ingredients, stored in PostgreSQL.
    built at least once with Maven (`mvn generate-resources`) since the last clean. The API works
    either way.
 
+## Recipe photos
+
+Photos are files in an images folder outside the project, `~/cookbook-images` by default (set
+`COOKBOOK_IMAGES_DIR` to use another one). The app serves that folder at `/images/...`, so a
+recipe's photo URL can be `/images/lecso.jpg`. Full `https://...` links to photos elsewhere work too.
+The folder isn't in git or in the jar, so back it up along with the database.
+
 ## Building a jar
 
 ```sh
@@ -190,7 +197,8 @@ src/main/java/family/cookbook/
 ├── ingredient/    Ingredient entity, repository, service, controller
 ├── recipe/        Recipe entity, repository, service, controller
 ├── ApiExceptionHandler.java   Renders errors as problem details
-└── FrontendController.java    Serves the React app for its page URLs
+├── FrontendController.java    Serves the React app for its page URLs
+└── ImagesConfig.java          Serves the images folder at /images
 
 frontend/src/
 ├── api/           fetch wrapper (client.js) and TanStack Query hooks (queries.js)

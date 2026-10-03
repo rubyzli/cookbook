@@ -3,7 +3,7 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The project has no version numbers yet,
 so entries are grouped by date.
-
+can 
 ## 2026-10-03
 
 ### Added
@@ -72,6 +72,8 @@ React Router)
   `-DskipTests` skips both test suites.
 - `FrontendController` answers page URLs such as `/recipes/{id}/edit` with the app's `index.html`,
   so links and page reloads work. API paths, `/assets/**` and files are left alone.
+- Recipe photos can be served by the app itself: files in `~/cookbook-images` (or
+  `COOKBOOK_IMAGES_DIR`) are available at `/images/...`, also through the Vite dev server.
 - For website work, `npm run dev` in `frontend/` starts Vite's dev server with live reload on port
   5173. It forwards `/api` to the backend on port 8080, so no CORS setup is needed.
 
