@@ -14,18 +14,15 @@ export async function apiGet(path, params = {}) {
   const query = new URLSearchParams(
     Object.entries(params).filter(([, value]) => value !== undefined && value !== null && value !== ''),
   ).toString()
-  const response = await fetch(query ? `${path}?${query}` : path, {
+  const response = await send(query ? `${path}?${query}` : path, {
     headers: { Accept: 'application/json' },
   })
-  if (!response.ok) {
-    throw await toApiError(response)
-  }
   return response.json()
 }
 
 // POST/PUT/DELETE with an optional JSON body. Returns the parsed response, or null for 204 No Content.
 export async function apiSend(method, path, body) {
-  const response = await fetch(path, {
+  const response = await send(path, {
     method,
     headers: {
       Accept: 'application/json',
@@ -33,10 +30,24 @@ export async function apiSend(method, path, body) {
     },
     body: body === undefined ? undefined : JSON.stringify(body),
   })
+  return response.status === 204 ? null : response.json()
+}
+
+// Status used for requests that never got a response
+export const NETWORK_ERROR = 0
+
+async function send(url, init) {
+  let response
+  try {
+    response = await fetch(url, init)
+  } catch {
+    // fetch only rejects when no response arrived: server not running, connection lost, offline
+    throw new ApiError(NETWORK_ERROR, 'Can’t reach the server. Check that the app is running.')
+  }
   if (!response.ok) {
     throw await toApiError(response)
   }
-  return response.status === 204 ? null : response.json()
+  return response
 }
 
 async function toApiError(response) {
@@ -44,7 +55,11 @@ async function toApiError(response) {
     const problem = await response.json()
     return new ApiError(response.status, problem.detail, problem.errors)
   } catch {
-    // Not JSON, e.g. the Vite proxy's error page when the backend is down
+    // The backend always answers with JSON, so a plain gateway error means a proxy in front of it
+    // (Vite's, in development) couldn't reach it
+    if ([502, 503, 504].includes(response.status)) {
+      return new ApiError(response.status, 'The backend isn’t responding. Check that it’s running on port 8080.')
+    }
     return new ApiError(response.status)
   }
 }

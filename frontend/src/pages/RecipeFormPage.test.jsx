@@ -1,6 +1,6 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mockApi, renderApp, sentRequests } from '../test/utils.jsx'
 
 const dessert = { id: 'c1', name: 'Dessert' }
@@ -192,6 +192,39 @@ describe('New recipe', () => {
     expect(sentRequests(fetchMock)).toEqual([
       { method: 'POST', url: '/api/categories', body: { name: 'Breakfast' } },
     ])
+  })
+
+  it('shows a category load error without also saying there are none', async () => {
+    // First load succeeds with no categories; the refetch after adding one fails. The cache still
+    // holds the old empty list, which used to show "No categories yet" next to the error.
+    let categoryLoads = 0
+    mockApi(
+      baseRoutes({
+        '/api/categories': () =>
+          ++categoryLoads === 1 ? [] : { status: 500, body: { detail: 'Internal Server Error' } },
+        'POST /api/categories': ({ body }) => ({ id: 'c-new', name: body.name }),
+      }),
+    )
+    renderApp('/recipes/new')
+    await screen.findByText('No categories yet. Add one below.')
+
+    await userEvent.type(field('New category'), 'Test{enter}')
+
+    expect(await screen.findByText('Couldn’t load categories: Internal Server Error')).toBeInTheDocument()
+    expect(screen.queryByText('No categories yet. Add one below.')).not.toBeInTheDocument()
+  })
+
+  it('shows a clear message when adding a category cannot reach the server', async () => {
+    mockApi(baseRoutes({ '/api/categories': [] }))
+    renderApp('/recipes/new')
+    await screen.findByText('No categories yet. Add one below.')
+    vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('Failed to fetch'))))
+
+    await userEvent.type(field('New category'), 'Test{enter}')
+
+    expect(
+      await screen.findByText('Couldn’t add “Test”: Can’t reach the server. Check that the app is running.'),
+    ).toBeInTheDocument()
   })
 
   it('selects an existing category instead of creating a duplicate', async () => {

@@ -9,9 +9,9 @@ import './index.css'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      // A 4xx (e.g. 404) won't change on retry; only retry network and server errors
+      // A 4xx (e.g. 404) won't change on retry; network errors (status 0) and 5xx might
       retry: (failureCount, error) =>
-        !(error instanceof ApiError && error.status < 500) && failureCount < 2,
+        !(error instanceof ApiError && error.status >= 400 && error.status < 500) && failureCount < 2,
     },
   },
 })

@@ -100,7 +100,7 @@ function RecipeResults({ query, filtered }) {
     return (
       <StatusMessage role="alert">
         <p>Couldn’t load recipes.</p>
-        <p className="hint">{query.error.message}. Is the backend running on port 8080?</p>
+        <p className="hint">{query.error.message}</p>
       </StatusMessage>
     )
   }

@@ -32,15 +32,20 @@ export default function CategoryPicker({ selectedIds, onChange, error }) {
       select(created.id)
       setNewName('')
     } catch (e) {
-      setAddError(e.message)
+      setAddError(`Couldn’t add “${name}”: ${e.message}`)
     }
   }
 
   return (
     <fieldset className="form-section">
       <legend>Categories</legend>
-      {categories.isError && <p className="field-error">Couldn’t load categories.</p>}
-      {categories.data?.length === 0 && <p className="field-hint">No categories yet. Add one below.</p>}
+      {/* After a failed refetch the last good list is kept, so check isError before calling it empty */}
+      {categories.isError && (
+        <p className="field-error">Couldn’t load categories: {categories.error.message}</p>
+      )}
+      {!categories.isError && categories.data?.length === 0 && (
+        <p className="field-hint">No categories yet. Add one below.</p>
+      )}
       {categories.data?.length > 0 && (
         <div className="chip-options">
           {categories.data.map((category) => (

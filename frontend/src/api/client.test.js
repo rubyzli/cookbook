@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { ApiError, apiGet } from './client.js'
+import { ApiError, apiGet, apiSend, NETWORK_ERROR } from './client.js'
 
 function stubFetch(response) {
   const fetchMock = vi.fn(async () => response)
@@ -39,13 +39,49 @@ describe('apiGet', () => {
   })
 
   it('throws an ApiError with a generic message when the error body is not JSON', async () => {
-    stubFetch(new Response('Bad Gateway', { status: 502 }))
+    stubFetch(new Response('oops', { status: 500 }))
 
     const error = await apiGet('/api/recipes').catch((e) => e)
 
     expect(error).toBeInstanceOf(ApiError)
-    expect(error.status).toBe(502)
-    expect(error.message).toBe('Request failed with status 502')
+    expect(error.status).toBe(500)
+    expect(error.message).toBe('Request failed with status 500')
     expect(error.errors).toEqual({})
+  })
+
+  it('says the backend is not responding when the dev proxy returns a plain 502', async () => {
+    stubFetch(new Response('', { status: 502, headers: { 'Content-Type': 'text/plain' } }))
+
+    const error = await apiGet('/api/recipes').catch((e) => e)
+
+    expect(error.status).toBe(502)
+    expect(error.message).toBe('The backend isn’t responding. Check that it’s running on port 8080.')
+  })
+
+  it('says the server cannot be reached when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('Failed to fetch'))))
+
+    const error = await apiGet('/api/recipes').catch((e) => e)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error.status).toBe(NETWORK_ERROR)
+    expect(error.message).toBe('Can’t reach the server. Check that the app is running.')
+  })
+})
+
+describe('apiSend', () => {
+  it('says the server cannot be reached when fetch itself fails', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('Failed to fetch'))))
+
+    const error = await apiSend('POST', '/api/categories', { name: 'Test' }).catch((e) => e)
+
+    expect(error.status).toBe(NETWORK_ERROR)
+    expect(error.message).toBe('Can’t reach the server. Check that the app is running.')
+  })
+
+  it('returns null for 204 No Content', async () => {
+    stubFetch(new Response(null, { status: 204 }))
+
+    await expect(apiSend('DELETE', '/api/recipes/r1')).resolves.toBeNull()
   })
 })

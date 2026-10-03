@@ -67,6 +67,11 @@ so entries are grouped by date.
 
 ### Fixed
 
+- Frontend error messages when the server can't be reached: "Can't reach the server" instead of
+  the browser's "Failed to fetch", and "The backend isn't responding" when the Vite proxy can't
+  reach Spring Boot. Network errors are now retried like server errors.
+- The category picker no longer says "No categories yet" next to a load error.
+
 - The database password is read from the `POSTGRESQL_PW` environment variable.
 - Entities store the name passed to their constructor and have the no-argument constructor JPA
   needs.
