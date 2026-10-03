@@ -1,14 +1,17 @@
 # Cookbook
 
-A REST API for a family cookbook: recipes, categories and ingredients, stored in PostgreSQL.
+A family cookbook: recipes, categories and ingredients, stored in PostgreSQL.
 
-Built with Spring Boot 4.1, Java 21, Spring Data JPA and Flyway.
+- **Backend:** REST API built with Spring Boot 4.1, Java 21, Spring Data JPA and Flyway.
+- **Frontend:** React app in `frontend/`, built with Vite (plain JavaScript), TanStack Query and
+  React Router.
 
 ## Prerequisites
 
 - Java 21
 - Maven
 - PostgreSQL running on `localhost:5432`
+- Node.js 20 or newer, for the frontend (`brew install node`)
 
 ## Setup
 
@@ -36,6 +39,33 @@ Built with Spring Boot 4.1, Java 21, Spring Data JPA and Flyway.
    ```
 
    On startup, Flyway creates the tables and the app listens on `http://localhost:8080`.
+
+## Frontend
+
+The frontend runs on its own dev server and forwards `/api` requests to the backend on port 8080,
+so start the backend first. Then, in a second terminal:
+
+```sh
+cd frontend
+npm install     # first time only
+npm run dev     # http://localhost:5173
+```
+
+Pages:
+
+- `/` lists recipes, with a search box and category filter. Both are kept in the URL
+  (`/?search=pie&categoryId=...`), so a filtered list can be bookmarked or shared.
+- `/recipes/{id}` shows a recipe with its times, categories, ingredients and numbered steps.
+  Each line of a recipe's instructions is shown as one step.
+
+Other commands, all run in `frontend/`:
+
+| Command              | Does                                      |
+|----------------------|-------------------------------------------|
+| `npm test`           | Runs the tests once (Vitest, no backend needed) |
+| `npm run test:watch` | Reruns the tests on every change          |
+| `npm run lint`       | Lints with oxlint                         |
+| `npm run build`      | Builds the production bundle into `frontend/dist` |
 
 ## API
 
@@ -114,5 +144,12 @@ src/main/java/family/cookbook/
 ├── category/      Category entity, repository, service, controller
 ├── ingredient/    Ingredient entity, repository, service, controller
 ├── recipe/        Recipe entity, repository, service, controller
-└── ApiExceptionHandler.java   Maps database constraint violations to 409
+└── ApiExceptionHandler.java   Renders errors as problem details
+
+frontend/src/
+├── api/           fetch wrapper (client.js) and TanStack Query hooks (queries.js)
+├── components/    Layout, recipe card, category chips, shared bits
+├── pages/         One component per route, with its tests next to it
+├── utils/         Formatting for times and amounts
+└── test/          Test setup and helpers (renderApp, mockApi)
 ```

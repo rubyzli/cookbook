@@ -8,6 +8,16 @@ so entries are grouped by date.
 
 ### Added
 
+- **Frontend** in `frontend/`: a React app (plain JavaScript) built with Vite, using TanStack
+  Query for API calls and React Router for pages. In development, Vite forwards `/api` to the
+  backend on port 8080, so no CORS setup is needed.
+  - Recipe list (`/`) with cards showing description, times, servings and categories. A search box
+    (applied after a short pause in typing) and a category filter are kept in the URL.
+  - Recipe detail (`/recipes/{id}`) with total time, category links that filter the list,
+    ingredient lines and numbered instruction steps.
+  - Loading, empty, error and not-found states, a layout that works on phones, and light and dark
+    themes that follow the system setting.
+  - Vitest and Testing Library tests for the pages, API client and formatting helpers.
 - **Recipe details, categories and ingredients:** a recipe can now be created and updated with all
   of its fields (description, servings, prep and cook time, instructions, image URL), a list of
   category ids, and an ordered list of ingredient lines. Each line has an optional amount and unit,
