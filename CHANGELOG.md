@@ -18,7 +18,10 @@ so entries are grouped by date.
   if the recipe doesn't exist and 409 if the new name belongs to another recipe.
 - `GET /api/recipes` accepts `?search=` (name contains, any case) and `?categoryId=`, and returns
   results sorted by name.
-- Ingredient endpoints: `GET`, `GET /{id}`, `POST` and `DELETE` under `/api/ingredients`.
+- Category and ingredient endpoints, the same for both under `/api/categories` and
+  `/api/ingredients`: list, get by id, create, rename (`PUT /{id}`) and delete. Lists are sorted by
+  name and include `recipeCount`, the number of recipes using each one. Renaming returns 404 if
+  missing and 409 if another one already has the name.
 - Flyway migrations own the database schema:
   - `V1__create_tables.sql` creates `category`, `ingredient` and `recipe`, with names unique
     regardless of case.
@@ -33,10 +36,6 @@ so entries are grouped by date.
 - 409 response when a name already exists (ignoring case), when two requests create the same name
   at once, or when deleting an ingredient that a recipe still uses ("Ingredient is used by 2
   recipes").
-- `PUT /api/categories/{id}` and `PUT /api/ingredients/{id}` rename. Returns 404 if missing and 409
-  if another one already has the name.
-- `GET /api/categories` and `GET /api/ingredients` include `recipeCount`, the number of recipes
-  using each one, and are sorted by name.
 - Validation messages follow the request's `Accept-Language` (English, German, Hungarian).
 
 **Website** (React app in `frontend/`, plain JavaScript, built with Vite, TanStack Query and
@@ -115,6 +114,17 @@ React Router)
   browser's "Failed to fetch", and "The backend isn't responding" when the Vite dev server can't
   reach Spring Boot. Network errors are now retried like server errors.
 - The category picker no longer says "No categories yet" next to a load error.
+
+### Known limitations
+
+- Leaving the recipe form doesn't warn about unsaved changes.
+- If saving a recipe fails, ingredients it created on the way stay in the database. They're reused
+  on the next save, so nothing breaks.
+- Error messages already on screen stay in the old language after switching; they're shown in the
+  new one the next time they appear.
+- Error details sent by the server for unexpected failures (5xx) are in English.
+- The German and Hungarian texts haven't been reviewed by a native speaker yet. They live in
+  `frontend/src/i18n/messages/`.
 
 ### Upgrade notes
 
