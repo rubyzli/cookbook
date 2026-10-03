@@ -26,6 +26,12 @@ so entries are grouped by date.
   - Checks the backend's rules before sending, shows server errors on the matching field or
     ingredient row, and moves focus to the first problem.
 - Delete button on the recipe detail page, with an in-page confirmation.
+- **One app on one port:** the Maven build now installs Node (24 LTS, into `frontend/node`),
+  builds the frontend into the jar and runs the frontend tests. `mvn spring-boot:run` and
+  `java -jar` serve the website and the API together on port 8080. `-DskipFrontend` skips the
+  frontend for backend-only work; `-DskipTests` skips both test suites.
+- `FrontendController` answers page URLs such as `/recipes/{id}/edit` with the app's `index.html`,
+  so links and page reloads work. API paths, `/assets/**` and files are left alone.
 - **Recipe details, categories and ingredients:** a recipe can now be created and updated with all
   of its fields (description, servings, prep and cook time, instructions, image URL), a list of
   category ids, and an ordered list of ingredient lines. Each line has an optional amount and unit,

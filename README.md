@@ -11,7 +11,8 @@ A family cookbook: recipes, categories and ingredients, stored in PostgreSQL.
 - Java 21
 - Maven
 - PostgreSQL running on `localhost:5432`
-- Node.js 20 or newer, for the frontend (`brew install node`)
+- Node.js 20 or newer, only for working on the frontend with its dev server (`brew install node`).
+  The Maven build downloads its own copy of Node, so building and running the app doesn't need it.
 
 ## Setup
 
@@ -38,12 +39,33 @@ A family cookbook: recipes, categories and ingredients, stored in PostgreSQL.
    mvn spring-boot:run
    ```
 
-   On startup, Flyway creates the tables and the app listens on `http://localhost:8080`.
+   Open `http://localhost:8080`. The build first installs Node into `frontend/node` (the first run
+   downloads it) and builds the frontend, so the website and the API are both served on port 8080.
+   On startup, Flyway creates the tables.
+
+   Running from IntelliJ skips the Maven plugins, so the website is only there if the frontend was
+   built at least once with Maven (`mvn generate-resources`) since the last clean. The API works
+   either way.
+
+## Building a jar
+
+```sh
+mvn package
+java -jar target/cookbook-0.0.1-SNAPSHOT.jar
+```
+
+`mvn package` builds and tests both the backend and the frontend, and puts the built frontend inside
+the jar, so the jar plus a PostgreSQL database is everything needed to run the app. Useful flags:
+
+| Flag             | Effect                                                              |
+|------------------|---------------------------------------------------------------------|
+| `-DskipTests`    | Skips the backend and frontend tests                                |
+| `-DskipFrontend` | Skips installing, building and testing the frontend (backend-only work) |
 
 ## Frontend
 
-The frontend runs on its own dev server and forwards `/api` requests to the backend on port 8080,
-so start the backend first. Then, in a second terminal:
+When working on the frontend, use Vite's dev server: it reloads the page as you edit. It forwards
+`/api` requests to the backend on port 8080, so start the backend first. Then, in a second terminal:
 
 ```sh
 cd frontend
@@ -72,7 +94,10 @@ Other commands, all run in `frontend/`:
 | `npm test`           | Runs the tests once (Vitest, no backend needed) |
 | `npm run test:watch` | Reruns the tests on every change          |
 | `npm run lint`       | Lints with oxlint                         |
-| `npm run build`      | Builds the production bundle into `frontend/dist` |
+| `npm run build`      | Builds the production bundle into `frontend/dist` (Maven builds into the jar instead) |
+
+Page URLs like `/recipes/{id}` are handled by React in the browser. When one is opened directly
+from the jar, `FrontendController` answers with `index.html` so the right page still loads.
 
 ## API
 
@@ -151,7 +176,8 @@ src/main/java/family/cookbook/
 ├── category/      Category entity, repository, service, controller
 ├── ingredient/    Ingredient entity, repository, service, controller
 ├── recipe/        Recipe entity, repository, service, controller
-└── ApiExceptionHandler.java   Renders errors as problem details
+├── ApiExceptionHandler.java   Renders errors as problem details
+└── FrontendController.java    Serves the React app for its page URLs
 
 frontend/src/
 ├── api/           fetch wrapper (client.js) and TanStack Query hooks (queries.js)

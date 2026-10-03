@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Node and npm installed by the Maven build (frontend-maven-plugin)
+node/
