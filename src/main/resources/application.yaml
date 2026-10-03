@@ -1,3 +1,14 @@
 spring:
   application:
     name: cookbook
+  datasource:
+    url: jdbc:postgresql://localhost:5432/cookbook
+    username: cookbook
+    password: ${POSTGRESQL_PW}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true

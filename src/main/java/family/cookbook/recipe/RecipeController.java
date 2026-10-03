@@ -1,13 +1,13 @@
 package family.cookbook.recipe;
 
 
-import family.cookbook.category.Category;
 import family.cookbook.recipe.dto.CreateRecipeRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -26,14 +26,14 @@ public class RecipeController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Recipe> getRecipeById(@PathVariable UUID id) {
-        return recipeService.getRecipeById(id);
+    public ResponseEntity<Recipe> getRecipeById(@PathVariable UUID id) {
+        return ResponseEntity.of(recipeService.getRecipeById(id));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Recipe createRecipe(@RequestBody CreateRecipeRequest request) {
-        return recipeService.createRecipe(request.title());
+    public Recipe createRecipe(@Valid @RequestBody CreateRecipeRequest request) {
+        return recipeService.createRecipe(request.name());
     }
 
     @DeleteMapping("/{id}")

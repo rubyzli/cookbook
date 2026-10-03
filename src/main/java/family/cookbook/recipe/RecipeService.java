@@ -1,6 +1,8 @@
 package family.cookbook.recipe;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,19 +23,10 @@ public class RecipeService {
 
     public Recipe createRecipe(String name){
         if(recipeRepository.existsByNameIgnoreCase(name)){
-            throw new IllegalArgumentException("Category already exists");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Recipe already exists");
         }
         return recipeRepository.save(new Recipe(name));
     }
-
-    public Optional<Recipe> getCategoryById(UUID id) {
-        return  recipeRepository.findById(id);
-    }
-
-    public void deleteCategory(UUID id) {
-        recipeRepository.deleteById(id);
-    }
-
 
     public void deleteRecipe(UUID id) {
         recipeRepository.deleteById(id);

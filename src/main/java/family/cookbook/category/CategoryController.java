@@ -1,11 +1,12 @@
 package family.cookbook.category;
 
 import family.cookbook.category.dto.CreateCategoryRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -24,13 +25,13 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}")
-    public Optional<Category> getCategoryById(@PathVariable UUID id) {
-        return categoryService.getCategoryById(id);
+    public ResponseEntity<Category> getCategoryById(@PathVariable UUID id) {
+        return ResponseEntity.of(categoryService.getCategoryById(id));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Category createCategory(@RequestBody CreateCategoryRequest request) {
+    public Category createCategory(@Valid @RequestBody CreateCategoryRequest request) {
         return categoryService.createCategory(request.name());
     }
 

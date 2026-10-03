@@ -1,6 +1,8 @@
 package family.cookbook.category;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +23,7 @@ public class CategoryService {
 
     public Category createCategory(String name){
         if(categoryRepository.existsByNameIgnoreCase(name)){
-            throw new IllegalArgumentException("Category already exists");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Category already exists");
         }
         return categoryRepository.save(new Category(name));
     }

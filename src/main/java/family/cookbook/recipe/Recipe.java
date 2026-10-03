@@ -1,44 +1,57 @@
 package family.cookbook.recipe;
 
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.Instant;
+import java.util.UUID;
 
 @Entity
 public class Recipe {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
-    private String title;
+    private UUID id;
+    @Column(nullable = false)
+    private String name;
     private String description;
-    private String servings;
-    private String prepTimeMinutes;
-    private String cookTimeMinutes;
+    private Integer servings;
+    private Integer prepTimeMinutes;
+    private Integer cookTimeMinutes;
+    @Column(columnDefinition = "text")
     private String instructions;
     private String imageUrl;
     private String createdBy;
-    private String createdAt;
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private Instant createdAt;
 
-    public Recipe(String name) {
+    protected Recipe() {
     }
 
-    public String getId() {
+    public Recipe(String name) {
+        this.name = name;
+    }
+
+    public UUID getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(UUID id) {
         this.id = id;
     }
 
-    public String getTitle() {
-        return title;
+    public String getName() {
+        return name;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getDescription() {
@@ -49,27 +62,27 @@ public class Recipe {
         this.description = description;
     }
 
-    public String getServings() {
+    public Integer getServings() {
         return servings;
     }
 
-    public void setServings(String servings) {
+    public void setServings(Integer servings) {
         this.servings = servings;
     }
 
-    public String getPrepTimeMinutes() {
+    public Integer getPrepTimeMinutes() {
         return prepTimeMinutes;
     }
 
-    public void setPrepTimeMinutes(String prepTimeMinutes) {
+    public void setPrepTimeMinutes(Integer prepTimeMinutes) {
         this.prepTimeMinutes = prepTimeMinutes;
     }
 
-    public String getCookTimeMinutes() {
+    public Integer getCookTimeMinutes() {
         return cookTimeMinutes;
     }
 
-    public void setCookTimeMinutes(String cookTimeMinutes) {
+    public void setCookTimeMinutes(Integer cookTimeMinutes) {
         this.cookTimeMinutes = cookTimeMinutes;
     }
 
@@ -97,11 +110,7 @@ public class Recipe {
         this.createdBy = createdBy;
     }
 
-    public String getCreatedAt() {
+    public Instant getCreatedAt() {
         return createdAt;
-    }
-
-    public void setCreatedAt(String createdAt) {
-        this.createdAt = createdAt;
     }
 }
