@@ -1,4 +1,6 @@
 package family.cookbook.ingredient.dto;
 
-public record CreateIngredientRequest() {
+import jakarta.validation.constraints.NotBlank;
+
+public record CreateIngredientRequest(@NotBlank String name) {
 }

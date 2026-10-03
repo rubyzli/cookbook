@@ -49,6 +49,10 @@ Built with Spring Boot 4.1, Java 21, Spring Data JPA and Flyway.
 | GET    | `/api/categories/{id}`  | Get a category (404 if none)|
 | POST   | `/api/categories`       | Create a category           |
 | DELETE | `/api/categories/{id}`  | Delete a category           |
+| GET    | `/api/ingredients`      | List all ingredients        |
+| GET    | `/api/ingredients/{id}` | Get an ingredient (404 if none)|
+| POST   | `/api/ingredients`      | Create an ingredient        |
+| DELETE | `/api/ingredients/{id}` | Delete an ingredient        |
 
 Create requests take a JSON body with a name:
 
@@ -59,8 +63,6 @@ curl -X POST http://localhost:8080/api/recipes \
 ```
 
 A blank name returns `400`. A name that already exists (ignoring case) returns `409`.
-
-Ingredients have an entity and service but no endpoints yet.
 
 ## Database schema
 
@@ -76,7 +78,7 @@ the matching entity. Don't edit migrations that have already run.
 ```
 src/main/java/family/cookbook/
 ├── category/      Category entity, repository, service, controller
-├── ingredient/    Ingredient entity, repository, service
+├── ingredient/    Ingredient entity, repository, service, controller
 ├── recipe/        Recipe entity, repository, service, controller
 └── ApiExceptionHandler.java   Maps database constraint violations to 409
 ```
