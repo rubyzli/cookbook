@@ -7,11 +7,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -35,14 +33,24 @@ public class ImageStorage {
         if (file.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The file is empty");
         }
-        try (InputStream in = file.getInputStream()) {
-            ImageType type = ImageType.detect(in.readNBytes(12)).orElseThrow(() ->
-                    new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Only JPEG, PNG, WebP and GIF photos can be uploaded"));
+        try {
+            return store(file.getBytes());
+        } catch (IOException e) {
+            throw new UncheckedIOException("Couldn't read the upload", e);
+        }
+    }
+
+    // The same for a photo already in memory, e.g. downloaded while importing a recipe
+    public String store(byte[] content) {
+        if (content.length == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The file is empty");
+        }
+        ImageType type = ImageType.detect(content).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Only JPEG, PNG, WebP and GIF photos can be uploaded"));
+        try {
             Files.createDirectories(imagesDir);
             Path target = imagesDir.resolve(newName(type));
-            try (InputStream content = file.getInputStream()) {
-                Files.copy(content, target, StandardCopyOption.REPLACE_EXISTING);
-            }
+            Files.write(target, content);
             return "/images/" + target.getFileName();
         } catch (IOException e) {
             throw new UncheckedIOException("Couldn't save the photo", e);

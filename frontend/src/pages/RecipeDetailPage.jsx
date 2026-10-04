@@ -65,6 +65,7 @@ function RecipeDetailContent({ query, showingOriginal, onShowOriginal }) {
           <h1 lang={recipe.language}>{recipe.name}</h1>
           {recipe.description && <p className="description">{recipe.description}</p>}
           <RecipeMeta recipe={recipe} showTotal pills />
+          {recipe.sourceUrl && <SourceLink url={recipe.sourceUrl} />}
           <RecipeActions recipe={recipe} />
         </div>
       </header>
@@ -147,6 +148,25 @@ function RecipeActions({ recipe }) {
         {t('detail.delete')}
       </button>
     </div>
+  )
+}
+
+// "Original recipe: nosalty.hu", opening the page it came from
+function SourceLink({ url }) {
+  const { t } = useI18n()
+  let site = url
+  try {
+    site = new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    // Keep the address as it is
+  }
+  return (
+    <p className="source-link">
+      {t('detail.source')}{' '}
+      <a href={url} target="_blank" rel="noopener noreferrer">
+        {site}
+      </a>
+    </p>
   )
 }
 

@@ -45,6 +45,9 @@ public class Recipe {
     @Column(columnDefinition = "text")
     private String notes;
     private String imageUrl;
+    // The page an imported recipe came from
+    @Column(length = 1000)
+    private String sourceUrl;
     private String createdBy;
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
@@ -143,6 +146,14 @@ public class Recipe {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getSourceUrl() {
+        return sourceUrl;
+    }
+
+    public void setSourceUrl(String sourceUrl) {
+        this.sourceUrl = sourceUrl;
     }
 
     public String getCreatedBy() {

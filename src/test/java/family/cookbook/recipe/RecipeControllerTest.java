@@ -90,6 +90,7 @@ class RecipeControllerTest {
                 .andExpect(jsonPath("$.ingredients[0].group").value("For the layers"))
                 .andExpect(jsonPath("$.notes").value("Rest 10 minutes before cutting."))
                 .andExpect(jsonPath("$.language").value("de"))
+                .andExpect(jsonPath("$.sourceUrl").value("https://example.com/lasagna"))
                 .andExpect(jsonPath("$.originalLanguage").value("hu"))
                 .andExpect(jsonPath("$.translationStatus").value("MACHINE"))
                 .andExpect(jsonPath("$.translationOutdated").value(true))
@@ -130,6 +131,15 @@ class RecipeControllerTest {
     }
 
     @Test
+    void createRecipeReturns400ForASourceThatIsNotAWebAddress() throws Exception {
+        mockMvc.perform(post("/api/recipes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Lasagna\", \"sourceUrl\": \"javascript:alert(1)\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.sourceUrl").exists());
+    }
+
+    @Test
     void createRecipeReturns400ForUnsupportedLanguage() throws Exception {
         mockMvc.perform(post("/api/recipes")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -156,7 +166,8 @@ class RecipeControllerTest {
     void createRecipeReturns201AndPassesFullRequest() throws Exception {
         RecipeRequest expected = new RecipeRequest("Lasagna", "Classic", 6, 20, 60, "Layer and bake.",
                 "Rest 10 minutes before cutting.", null, List.of(CATEGORY_ID),
-                List.of(new RecipeIngredientRequest(INGREDIENT_ID, new BigDecimal("500"), "g", "For the layers")), "de");
+                List.of(new RecipeIngredientRequest(INGREDIENT_ID, new BigDecimal("500"), "g", "For the layers")), "de",
+                "https://example.com/lasagna");
         when(recipeService.createRecipe(expected)).thenReturn(detail("Lasagna"));
 
         mockMvc.perform(post("/api/recipes")
@@ -171,6 +182,7 @@ class RecipeControllerTest {
                                   "instructions": "Layer and bake.",
                                   "notes": "Rest 10 minutes before cutting.",
                                   "language": "de",
+                                  "sourceUrl": "https://example.com/lasagna",
                                   "categoryIds": ["%s"],
                                   "ingredients": [{"ingredientId": "%s", "amount": 500, "unit": "g", "group": " For the layers "}]
                                 }
@@ -181,7 +193,7 @@ class RecipeControllerTest {
 
     @Test
     void createRecipeTreatsMissingListsAsEmpty() throws Exception {
-        RecipeRequest expected = new RecipeRequest("Lasagna", null, null, null, null, null, null, null, List.of(), List.of(), null);
+        RecipeRequest expected = new RecipeRequest("Lasagna", null, null, null, null, null, null, null, List.of(), List.of(), null, null);
         when(recipeService.createRecipe(expected)).thenReturn(detail("Lasagna"));
 
         mockMvc.perform(post("/api/recipes")
@@ -217,7 +229,7 @@ class RecipeControllerTest {
     @Test
     void createRecipeTreatsBlankGroupAsNone() throws Exception {
         RecipeRequest expected = new RecipeRequest("Lasagna", null, null, null, null, null, null, null, List.of(),
-                List.of(new RecipeIngredientRequest(INGREDIENT_ID, null, null, null)), null);
+                List.of(new RecipeIngredientRequest(INGREDIENT_ID, null, null, null)), null, null);
         when(recipeService.createRecipe(expected)).thenReturn(detail("Lasagna"));
 
         mockMvc.perform(post("/api/recipes")
@@ -324,7 +336,7 @@ class RecipeControllerTest {
 
     private static RecipeDetail detail(String name) {
         return new RecipeDetail(UUID.randomUUID(), name, "Classic", 6, 20, 60, "Layer and bake.",
-                "Rest 10 minutes before cutting.", null, null, Instant.parse("2026-10-03T12:00:00Z"),
+                "Rest 10 minutes before cutting.", null, "https://example.com/lasagna", null, Instant.parse("2026-10-03T12:00:00Z"),
                 List.of(new CategoryRef(CATEGORY_ID, "Italian")),
                 List.of(new RecipeIngredientResponse(INGREDIENT_ID, "Pasta sheets", new BigDecimal("500"), "g",
                         "For the layers")), "de", "hu", TranslationStatus.MACHINE, true);

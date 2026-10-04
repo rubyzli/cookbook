@@ -8,6 +8,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -30,7 +31,7 @@ class ImageControllerTest {
 
     @Test
     void uploadReturnsTheUrlOfTheStoredPhoto() throws Exception {
-        when(storage.store(any())).thenReturn("/images/upload-20261004-3f9a1c7b.jpg");
+        when(storage.store(any(MultipartFile.class))).thenReturn("/images/upload-20261004-3f9a1c7b.jpg");
 
         mockMvc.perform(multipart("/api/images").file(PHOTO))
                 .andExpect(status().isCreated())
@@ -39,7 +40,7 @@ class ImageControllerTest {
 
     @Test
     void uploadExplainsWhenTheFileIsNotAPhoto() throws Exception {
-        when(storage.store(any())).thenThrow(new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+        when(storage.store(any(MultipartFile.class))).thenThrow(new ResponseStatusException(HttpStatus.UNSUPPORTED_MEDIA_TYPE,
                 "Only JPEG, PNG, WebP and GIF photos can be uploaded"));
 
         mockMvc.perform(multipart("/api/images").file(PHOTO))
@@ -49,7 +50,7 @@ class ImageControllerTest {
 
     @Test
     void uploadAnswers413WhenTheFileIsTooBig() throws Exception {
-        when(storage.store(any())).thenThrow(new MaxUploadSizeExceededException(15 * 1024 * 1024));
+        when(storage.store(any(MultipartFile.class))).thenThrow(new MaxUploadSizeExceededException(15 * 1024 * 1024));
 
         mockMvc.perform(multipart("/api/images").file(PHOTO))
                 .andExpect(status().isPayloadTooLarge());

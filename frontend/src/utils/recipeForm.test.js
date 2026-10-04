@@ -139,6 +139,7 @@ describe('toRequest', () => {
       cookTimeMinutes: null,
       instructions: 'Mix.\nBake.',
       notes: null,
+      sourceUrl: null,
       imageUrl: null,
       categoryIds: ['c1'],
       language: 'hu',

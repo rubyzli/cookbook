@@ -164,7 +164,7 @@ class RecipeServiceTest {
                 "Use tart apples.", null,
                 List.of(dessert.getId(), baking.getId()),
                 List.of(line(flour, "250", "g", "For the dough"), line(butter, "125", "g", "For the dough"),
-                        line(butter, "1", "tbsp", "For the top")), "en");
+                        line(butter, "1", "tbsp", "For the top")), "en", " https://example.com/pie ");
         when(recipeRepository.existsByNameIgnoreCase("Apple Pie")).thenReturn(false);
         when(categoryRepository.findAllById(Set.of(dessert.getId(), baking.getId()))).thenReturn(List.of(dessert, baking));
         when(ingredientRepository.findAllById(Set.of(flour.getId(), butter.getId()))).thenReturn(List.of(flour, butter));
@@ -180,6 +180,7 @@ class RecipeServiceTest {
         assertThat(created.instructions()).isEqualTo("Mix. Bake.");
         assertThat(created.notes()).isEqualTo("Use tart apples.");
         assertThat(created.originalLanguage()).isEqualTo("en");
+        assertThat(created.sourceUrl()).isEqualTo("https://example.com/pie");
         assertThat(created.categories()).extracting(CategoryRef::name).containsExactly("Baking", "Dessert");
         assertThat(created.ingredients()).containsExactly(
                 new RecipeIngredientResponse(flour.getId(), "Flour", new BigDecimal("250"), "g", "For the dough"),
@@ -260,7 +261,7 @@ class RecipeServiceTest {
         when(recipeRepository.saveAndFlush(recipe)).thenReturn(recipe);
 
         RecipeRequest request = new RecipeRequest("Apple Pie", null, null, null, null, null, null, null,
-                List.of(italian.getId()), List.of(line(sugar, "100", "g")), null);
+                List.of(italian.getId()), List.of(line(sugar, "100", "g")), null, null);
         Optional<RecipeDetail> updated = recipeService.updateRecipe(recipe.getId(), request);
 
         assertThat(updated).hasValueSatisfying(detail -> {
@@ -311,7 +312,7 @@ class RecipeServiceTest {
     }
 
     private static RecipeRequest request(String name, List<UUID> categoryIds, List<RecipeIngredientRequest> ingredients) {
-        return new RecipeRequest(name, null, null, null, null, null, null, null, categoryIds, ingredients, null);
+        return new RecipeRequest(name, null, null, null, null, null, null, null, categoryIds, ingredients, null, null);
     }
 
     private static RecipeIngredientRequest line(Ingredient ingredient, String amount, String unit) {

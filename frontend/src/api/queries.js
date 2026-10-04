@@ -106,6 +106,13 @@ export function useDeleteItem(kind) {
   })
 }
 
+// Reads a recipe from a web page into a draft for the form (nothing is saved yet)
+export function useImportRecipe() {
+  return useMutation({
+    mutationFn: (url) => apiSend('POST', '/api/recipes/import', { url }),
+  })
+}
+
 // Uploads a photo into the images folder; resolves with its URL ("/images/...")
 export function useUploadPhoto() {
   return useMutation({

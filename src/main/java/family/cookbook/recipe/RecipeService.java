@@ -110,6 +110,7 @@ public class RecipeService {
         recipe.setInstructions(request.instructions());
         recipe.setNotes(request.notes());
         recipe.setImageUrl(request.imageUrl());
+        recipe.setSourceUrl(request.sourceUrl() == null || request.sourceUrl().isBlank() ? null : request.sourceUrl().strip());
         recipe.replaceCategories(findCategories(request.categoryIds()));
         recipe.replaceIngredients(buildIngredientLines(recipe, request.ingredients()));
     }

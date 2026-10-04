@@ -29,8 +29,29 @@ export function emptyForm(language = 'hu') {
     imageUrl: '',
     instructions: '',
     notes: '',
+    sourceUrl: '',
     categoryIds: [],
     lines: [newLine()],
+  }
+}
+
+// A draft from POST /api/recipes/import, for checking in the form before saving
+export function formFromImport(draft) {
+  return {
+    ...emptyForm(draft.language),
+    name: draft.name ?? '',
+    description: draft.description ?? '',
+    servings: toText(draft.servings),
+    prepTimeMinutes: toText(draft.prepTimeMinutes),
+    cookTimeMinutes: toText(draft.cookTimeMinutes),
+    imageUrl: draft.imageUrl ?? '',
+    instructions: draft.instructions ?? '',
+    sourceUrl: draft.sourceUrl ?? '',
+    categoryIds: draft.categoryIds ?? [],
+    lines:
+      draft.ingredients?.length > 0
+        ? draft.ingredients.map((line) => newLine({ name: line.name, amount: toText(line.amount), unit: line.unit ?? '' }))
+        : [newLine()],
   }
 }
 
@@ -46,6 +67,7 @@ export function formFromRecipe(recipe) {
     imageUrl: recipe.imageUrl ?? '',
     instructions: recipe.instructions ?? '',
     notes: recipe.notes ?? '',
+    sourceUrl: recipe.sourceUrl ?? '',
     categoryIds: recipe.categories.map((category) => category.id),
     lines: recipe.ingredients.length > 0 ? rowsFromIngredients(recipe.ingredients) : [newLine()],
   }
@@ -93,6 +115,10 @@ export function validateForm(values, t) {
   checkLength(errors, t, 'name', values.name, 255)
   checkLength(errors, t, 'description', values.description, 255)
   checkLength(errors, t, 'imageUrl', values.imageUrl, 255)
+  if (values.sourceUrl?.trim() && !/^https?:\/\/\S+$/i.test(values.sourceUrl.trim())) {
+    errors.sourceUrl = t('validation.webAddress')
+  }
+  checkLength(errors, t, 'sourceUrl', values.sourceUrl ?? '', 1000)
 
   checkWholeNumber(errors, t, 'servings', values.servings, 1)
   checkWholeNumber(errors, t, 'prepTimeMinutes', values.prepTimeMinutes, 0)
@@ -144,6 +170,7 @@ export function toRequest(values, ingredientIds) {
       cookTimeMinutes: toNumber(values.cookTimeMinutes),
       instructions: blankToNull(values.instructions),
       notes: blankToNull(values.notes),
+      sourceUrl: blankToNull(values.sourceUrl ?? ''),
       imageUrl: blankToNull(values.imageUrl),
       categoryIds: values.categoryIds,
       language: values.language,

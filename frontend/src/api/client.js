@@ -2,14 +2,16 @@
 // so `detail` holds the reason and `errors` maps field names to validation messages.
 // `kind` marks failures the client detected itself ('network', 'gateway') so the UI can
 // describe them in the user's language; see i18n/errors.js.
+// `code` is the server's reason code where it gives one (e.g. BLOCKED when importing a recipe).
 export class ApiError extends Error {
-  constructor(status, detail, errors = {}, kind = undefined) {
+  constructor(status, detail, errors = {}, kind = undefined, code = undefined) {
     super(detail || `Request failed with status ${status}`)
     this.name = 'ApiError'
     this.status = status
     this.detail = detail
-    this.errors = errors
+    this.errors = errors ?? {}
     this.kind = kind
+    this.code = code
   }
 }
 
@@ -77,7 +79,7 @@ async function send(url, init) {
 async function toApiError(response) {
   try {
     const problem = await response.json()
-    return new ApiError(response.status, problem.detail, problem.errors)
+    return new ApiError(response.status, problem.detail, problem.errors, undefined, problem.code)
   } catch {
     // The backend always answers with JSON, so a plain gateway error means a proxy in front of it
     // (Vite's, in development) couldn't reach it

@@ -106,6 +106,17 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
           )}
         </Field>
         <PhotoField value={values.imageUrl} onChange={(url) => set('imageUrl', url)} error={errors.imageUrl} />
+        <Field label={t('form.sourceUrl')} hint={t('form.sourceUrlHint')} error={errors.sourceUrl}>
+          {(props) => (
+            <input
+              {...props}
+              type="url"
+              placeholder="https://…"
+              value={values.sourceUrl}
+              onChange={(e) => set('sourceUrl', e.target.value)}
+            />
+          )}
+        </Field>
         <div className="field-row">
           <Field label={t('form.servings')} error={errors.servings}>
             {(props) => (

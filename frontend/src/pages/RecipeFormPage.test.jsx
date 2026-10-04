@@ -91,6 +91,7 @@ describe('New recipe', () => {
           cookTimeMinutes: 25,
           instructions: 'Make the dough.\nRoll and bake.',
           notes: null,
+          sourceUrl: null,
           imageUrl: null,
           categoryIds: ['c2'],
           language: 'en',

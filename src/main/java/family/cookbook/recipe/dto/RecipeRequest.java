@@ -25,7 +25,9 @@ public record RecipeRequest(
         List<@NotNull UUID> categoryIds,
         List<@NotNull @Valid RecipeIngredientRequest> ingredients,
         // Language the recipe is written in; unchanged on update when left out, Hungarian on create
-        @Pattern(regexp = Languages.PATTERN) String language) {
+        @Pattern(regexp = Languages.PATTERN) String language,
+        // The page the recipe comes from, if it was imported or copied
+        @Size(max = 1000) @Pattern(regexp = "https?://.+") String sourceUrl) {
 
     public RecipeRequest {
         categoryIds = categoryIds == null ? List.of() : categoryIds;
