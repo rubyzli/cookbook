@@ -4,6 +4,19 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The project has no version numbers yet,
 so entries are grouped by date.
 
+## Known limitations
+
+- Leaving the recipe form doesn't warn about unsaved changes.
+- If saving a recipe fails, ingredients it created on the way stay in the database. They're reused
+  on the next save, so nothing breaks.
+- Error messages already on screen stay in the old language after switching; they're shown in the
+  new one the next time they appear.
+- Error details sent by the server for unexpected failures (5xx) are in English.
+- The German and Hungarian texts haven't been reviewed by a native speaker yet. They live in
+  `frontend/src/i18n/messages/`.
+- There's no photo upload: a photo is added by copying the file into the images folder and
+  setting the recipe's photo URL to `/images/<file name>`.
+
 ## 2026-10-04
 
 ### Added
@@ -22,6 +35,8 @@ so entries are grouped by date.
   `Cache-Control: no-cache`, so browsers check with the server before reusing them.
 - A photo that fails to load (missing file, dead link) shows the letter tile instead of a
   broken-image icon.
+- The unit field in the recipe form is wider, so units like "púpozott kanál" fit, and group
+  heading rows are highlighted.
 
 ### Fixed
 
@@ -30,8 +45,9 @@ so entries are grouped by date.
 
 ### Upgrade notes
 
-- Restart the backend after updating: the database already has the new columns, and an older
-  backend would drop ingredient groups whenever a recipe is saved through it.
+- The V3 migration runs when the new backend starts. Stop every backend still running older code
+  against the same database: it doesn't show notes, and saving a recipe through it drops the
+  recipe's ingredient groups.
 - If photos still look broken in a browser that used the older version, clear its cache once
   (Chrome: open DevTools, right-click the reload button, "Empty Cache and Hard Reload").
 
@@ -147,19 +163,6 @@ React Router)
   browser's "Failed to fetch", and "The backend isn't responding" when the Vite dev server can't
   reach Spring Boot. Network errors are now retried like server errors.
 - The category picker no longer says "No categories yet" next to a load error.
-
-### Known limitations
-
-- Leaving the recipe form doesn't warn about unsaved changes.
-- If saving a recipe fails, ingredients it created on the way stay in the database. They're reused
-  on the next save, so nothing breaks.
-- Error messages already on screen stay in the old language after switching; they're shown in the
-  new one the next time they appear.
-- Error details sent by the server for unexpected failures (5xx) are in English.
-- The German and Hungarian texts haven't been reviewed by a native speaker yet. They live in
-  `frontend/src/i18n/messages/`.
-- There's no photo upload: a photo is added by copying the file into the images folder and
-  setting the recipe's photo URL to `/images/<file name>`.
 
 ### Upgrade notes
 
