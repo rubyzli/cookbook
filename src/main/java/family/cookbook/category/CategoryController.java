@@ -2,7 +2,9 @@ package family.cookbook.category;
 
 import family.cookbook.category.dto.CategoryListItem;
 import family.cookbook.category.dto.CategoryRequest;
+import family.cookbook.translation.Languages;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,9 +22,11 @@ public class CategoryController {
         this.categoryService = categoryService;
     }
 
+    // Names come in the language asked for with Accept-Language where a translation exists
     @GetMapping
-    public List<CategoryListItem> getAllCategories() {
-        return categoryService.getAllCategories();
+    public List<CategoryListItem> getAllCategories(@RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false)
+                                       String acceptLanguage) {
+        return categoryService.getAllCategories(Languages.fromHeader(acceptLanguage));
     }
 
     @GetMapping("/{id}")
@@ -33,7 +37,7 @@ public class CategoryController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Category createCategory(@Valid @RequestBody CategoryRequest request) {
-        return categoryService.createCategory(request.name());
+        return categoryService.createCategory(request.name(), request.language());
     }
 
     @PutMapping("/{id}")

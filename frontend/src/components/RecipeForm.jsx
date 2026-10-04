@@ -4,6 +4,7 @@ import { ApiError } from '../api/client.js'
 import { findOrCreateIngredients } from '../api/queries.js'
 import { useI18n } from '../i18n/context.js'
 import { errorMessage } from '../i18n/errors.js'
+import { LANGUAGES } from '../i18n/translate.js'
 import {
   filledLines,
   formErrorsFromServer,
@@ -48,7 +49,10 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
     setFormError(null)
     let lineKeys = []
     try {
-      const ingredientIds = await findOrCreateIngredients(filledLines(values.lines).map((line) => line.name))
+      const ingredientIds = await findOrCreateIngredients(
+        filledLines(values.lines).map((line) => line.name),
+        values.language,
+      )
       const built = toRequest(values, ingredientIds)
       lineKeys = built.lineKeys
       await onSave(built.request)
@@ -74,6 +78,17 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
 
       <fieldset className="form-section">
         <legend>{t('form.basics')}</legend>
+        <Field label={t('form.language')} hint={t('form.languageHint')} error={errors.language}>
+          {(props) => (
+            <select {...props} value={values.language} onChange={(e) => set('language', e.target.value)}>
+              {LANGUAGES.map(({ code }) => (
+                <option key={code} value={code}>
+                  {t(`language.${code}`)}
+                </option>
+              ))}
+            </select>
+          )}
+        </Field>
         <Field label={t('form.name')} error={errors.name}>
           {(props) => (
             <input {...props} type="text" value={values.name} onChange={(e) => set('name', e.target.value)} />

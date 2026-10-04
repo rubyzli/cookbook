@@ -9,7 +9,8 @@ import { formFromRecipe } from '../utils/recipeForm.js'
 export default function EditRecipePage() {
   const { t } = useI18n()
   const { id } = useParams()
-  const recipe = useRecipe(id)
+  // Always the original: translations are edited on the translation page
+  const recipe = useRecipe(id, { original: true })
   const updateRecipe = useUpdateRecipe(id)
   const navigate = useNavigate()
 

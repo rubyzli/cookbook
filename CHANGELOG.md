@@ -14,12 +14,35 @@ so entries are grouped by date.
 - Error details sent by the server for unexpected failures (5xx) are in English.
 - The German and Hungarian texts haven't been reviewed by a native speaker yet. They live in
   `frontend/src/i18n/messages/`.
+- Machine translations need a person's check: DeepL sometimes picks the wrong cooking meaning
+  (e.g. "kemény hab", whipped cream, became "Eischnee", beaten egg whites).
+- Category names, ingredient names, recipe texts and units are translated; free text inside
+  ingredient units that isn't in the unit rules (e.g. "marék") stays as written.
 - There's no photo upload: a photo is added by copying the file into the images folder and
   setting the recipe's photo URL to `/images/<file name>`.
 
 ## 2026-10-04
 
 ### Added
+
+- **Recipe translations** between English, German and Hungarian, in any direction:
+  - Recipes, ingredients and categories record the language they're written in (existing ones are
+    Hungarian); the recipe form has a "Recipe language" field.
+  - Visitors see the version in the site language where a translation exists, otherwise the
+    original with a note saying which language it's in, and can switch between the two.
+  - "Translate automatically" drafts a translation with DeepL, including missing ingredient and
+    category names. The key (`DEEPL_API_KEY`) stays on the server; without one, only translating
+    by hand is offered.
+  - A translation page shows the original next to editable fields; saving marks it as reviewed.
+    Translations are marked outdated when the original is edited afterwards.
+  - Ingredient units follow fixed rules in other languages (ek → EL/tbsp, 25 dkg → 250 g).
+  - Ingredient and category names can be translated and checked on the Categories & ingredients
+    page, and are matched in any language in the recipe form ("Mehl" finds "liszt").
+  - Searching also matches translated recipe names. Recipe cards show a language tag (e.g. "HU")
+    when there's no translation into the site language.
+- `V4__add_languages_and_translations.sql` adds the `language` columns and the
+  `recipe_translation`, `recipe_translation_group`, `ingredient_translation` and
+  `category_translation` tables.
 
 - **New look:** a bundled serif for headings (Fraunces, works offline and covers ő/ű), a logo and
   pill navigation in a header that stays at the top, magazine-style recipe cards (four per row on
@@ -54,6 +77,7 @@ so entries are grouped by date.
 
 ### Upgrade notes
 
+- For automatic translation, set `DEEPL_API_KEY` for the backend (a free DeepL API key works).
 - The V3 migration runs when the new backend starts. Stop every backend still running older code
   against the same database: it doesn't show notes, and saving a recipe through it drops the
   recipe's ingredient groups.

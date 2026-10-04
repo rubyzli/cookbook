@@ -2,7 +2,9 @@ package family.cookbook.ingredient;
 
 import family.cookbook.ingredient.dto.IngredientListItem;
 import family.cookbook.ingredient.dto.IngredientRequest;
+import family.cookbook.translation.Languages;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,9 +22,11 @@ public class IngredientController {
         this.ingredientService = ingredientService;
     }
 
+    // Names come in the language asked for with Accept-Language where a translation exists
     @GetMapping
-    public List<IngredientListItem> getAllIngredients() {
-        return ingredientService.getAllIngredients();
+    public List<IngredientListItem> getAllIngredients(@RequestHeader(value = HttpHeaders.ACCEPT_LANGUAGE, required = false)
+                                       String acceptLanguage) {
+        return ingredientService.getAllIngredients(Languages.fromHeader(acceptLanguage));
     }
 
     @GetMapping("/{id}")
@@ -33,7 +37,7 @@ public class IngredientController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Ingredient createIngredient(@Valid @RequestBody IngredientRequest request) {
-        return ingredientService.createIngredient(request.name());
+        return ingredientService.createIngredient(request.name(), request.language());
     }
 
     @PutMapping("/{id}")

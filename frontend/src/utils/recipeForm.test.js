@@ -141,6 +141,7 @@ describe('toRequest', () => {
       notes: null,
       imageUrl: null,
       categoryIds: ['c1'],
+      language: 'hu',
       ingredients: [
         { ingredientId: 'i-flour', amount: 1.5, unit: 'cups', group: null },
         { ingredientId: 'i-salt', amount: null, unit: null, group: null },

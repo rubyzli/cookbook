@@ -1,6 +1,8 @@
 package family.cookbook.category;
 
 import family.cookbook.category.dto.CategoryListItem;
+import family.cookbook.translation.TranslationLookup.TranslatedName;
+import family.cookbook.translation.TranslationStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -12,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,14 +42,49 @@ class CategoryControllerTest {
     @Test
     void getAllCategoriesReturnsListWithRecipeCounts() throws Exception {
         UUID id = UUID.randomUUID();
-        when(categoryService.getAllCategories()).thenReturn(List.of(new CategoryListItem(id, "Desserts", 3)));
+        when(categoryService.getAllCategories(Optional.empty())).thenReturn(List.of(new CategoryListItem(id, "Desserts", "Desserts", "hu", 3,
+                Map.of("de", new TranslatedName("Nachspeisen", TranslationStatus.MACHINE)))));
 
         mockMvc.perform(get("/api/categories"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(id.toString()))
                 .andExpect(jsonPath("$[0].name").value("Desserts"))
-                .andExpect(jsonPath("$[0].recipeCount").value(3));
+                .andExpect(jsonPath("$[0].recipeCount").value(3))
+                .andExpect(jsonPath("$[0].originalLanguage").value("hu"))
+                .andExpect(jsonPath("$[0].translations.de.name").value("Nachspeisen"))
+                .andExpect(jsonPath("$[0].translations.de.status").value("MACHINE"));
+    }
+
+    @Test
+    void getAllCategoriesPassesTheLanguageFromAcceptLanguage() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(categoryService.getAllCategories(Optional.of("de")))
+                .thenReturn(List.of(new CategoryListItem(id, "Nachspeisen", "Desserts", "hu", 3, Map.of())));
+
+        mockMvc.perform(get("/api/categories").header("Accept-Language", "fr-FR, de-AT;q=0.9, en;q=0.5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Nachspeisen"));
+    }
+
+    @Test
+    void createCategoryPassesTheLanguage() throws Exception {
+        when(categoryService.createCategory("Nachspeisen", "de")).thenReturn(category("Nachspeisen"));
+
+        mockMvc.perform(post("/api/categories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Nachspeisen\", \"language\": \"de\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Nachspeisen"));
+    }
+
+    @Test
+    void createCategoryReturns400ForUnsupportedLanguage() throws Exception {
+        mockMvc.perform(post("/api/categories")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Farine\", \"language\": \"fr\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.language").exists());
     }
 
     @Test
@@ -76,7 +114,7 @@ class CategoryControllerTest {
 
     @Test
     void createCategoryReturns201WithCreated() throws Exception {
-        when(categoryService.createCategory("Desserts")).thenReturn(category("Desserts"));
+        when(categoryService.createCategory("Desserts", null)).thenReturn(category("Desserts"));
 
         mockMvc.perform(post("/api/categories")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -92,12 +130,12 @@ class CategoryControllerTest {
                         .content("{\"name\": \" \"}"))
                 .andExpect(status().isBadRequest());
 
-        verify(categoryService, never()).createCategory(anyString());
+        verify(categoryService, never()).createCategory(anyString(), any());
     }
 
     @Test
     void createCategoryReturns409WhenNameExists() throws Exception {
-        when(categoryService.createCategory("Desserts"))
+        when(categoryService.createCategory("Desserts", null))
                 .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Category already exists"));
 
         mockMvc.perform(post("/api/categories")
@@ -108,7 +146,7 @@ class CategoryControllerTest {
 
     @Test
     void createCategoryReturns409WhenUniqueConstraintFails() throws Exception {
-        when(categoryService.createCategory("Desserts")).thenThrow(new DataIntegrityViolationException("duplicate key"));
+        when(categoryService.createCategory("Desserts", null)).thenThrow(new DataIntegrityViolationException("duplicate key"));
 
         mockMvc.perform(post("/api/categories")
                         .contentType(MediaType.APPLICATION_JSON)

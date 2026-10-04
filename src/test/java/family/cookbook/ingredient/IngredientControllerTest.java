@@ -1,6 +1,8 @@
 package family.cookbook.ingredient;
 
 import family.cookbook.ingredient.dto.IngredientListItem;
+import family.cookbook.translation.TranslationLookup.TranslatedName;
+import family.cookbook.translation.TranslationStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -12,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,14 +43,49 @@ class IngredientControllerTest {
     @Test
     void getAllIngredientsReturnsListWithRecipeCounts() throws Exception {
         UUID id = UUID.randomUUID();
-        when(ingredientService.getAllIngredients()).thenReturn(List.of(new IngredientListItem(id, "Flour", 3)));
+        when(ingredientService.getAllIngredients(Optional.empty())).thenReturn(List.of(new IngredientListItem(id, "Flour", "Flour", "hu", 3,
+                Map.of("de", new TranslatedName("Mehl", TranslationStatus.MACHINE)))));
 
         mockMvc.perform(get("/api/ingredients"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].id").value(id.toString()))
                 .andExpect(jsonPath("$[0].name").value("Flour"))
-                .andExpect(jsonPath("$[0].recipeCount").value(3));
+                .andExpect(jsonPath("$[0].recipeCount").value(3))
+                .andExpect(jsonPath("$[0].originalLanguage").value("hu"))
+                .andExpect(jsonPath("$[0].translations.de.name").value("Mehl"))
+                .andExpect(jsonPath("$[0].translations.de.status").value("MACHINE"));
+    }
+
+    @Test
+    void getAllIngredientsPassesTheLanguageFromAcceptLanguage() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(ingredientService.getAllIngredients(Optional.of("de")))
+                .thenReturn(List.of(new IngredientListItem(id, "Mehl", "Flour", "hu", 3, Map.of())));
+
+        mockMvc.perform(get("/api/ingredients").header("Accept-Language", "fr-FR, de-AT;q=0.9, en;q=0.5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Mehl"));
+    }
+
+    @Test
+    void createIngredientPassesTheLanguage() throws Exception {
+        when(ingredientService.createIngredient("Mehl", "de")).thenReturn(ingredient("Mehl"));
+
+        mockMvc.perform(post("/api/ingredients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Mehl\", \"language\": \"de\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name").value("Mehl"));
+    }
+
+    @Test
+    void createIngredientReturns400ForUnsupportedLanguage() throws Exception {
+        mockMvc.perform(post("/api/ingredients")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Farine\", \"language\": \"fr\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.language").exists());
     }
 
     @Test
@@ -77,7 +115,7 @@ class IngredientControllerTest {
 
     @Test
     void createIngredientReturns201WithCreated() throws Exception {
-        when(ingredientService.createIngredient("Flour")).thenReturn(ingredient("Flour"));
+        when(ingredientService.createIngredient("Flour", null)).thenReturn(ingredient("Flour"));
 
         mockMvc.perform(post("/api/ingredients")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -93,12 +131,12 @@ class IngredientControllerTest {
                         .content("{\"name\": \" \"}"))
                 .andExpect(status().isBadRequest());
 
-        verify(ingredientService, never()).createIngredient(anyString());
+        verify(ingredientService, never()).createIngredient(anyString(), any());
     }
 
     @Test
     void createIngredientReturns409WhenNameExists() throws Exception {
-        when(ingredientService.createIngredient("Flour"))
+        when(ingredientService.createIngredient("Flour", null))
                 .thenThrow(new ResponseStatusException(HttpStatus.CONFLICT, "Ingredient already exists"));
 
         mockMvc.perform(post("/api/ingredients")
@@ -109,7 +147,7 @@ class IngredientControllerTest {
 
     @Test
     void createIngredientReturns409WhenUniqueConstraintFails() throws Exception {
-        when(ingredientService.createIngredient("Flour")).thenThrow(new DataIntegrityViolationException("duplicate key"));
+        when(ingredientService.createIngredient("Flour", null)).thenThrow(new DataIntegrityViolationException("duplicate key"));
 
         mockMvc.perform(post("/api/ingredients")
                         .contentType(MediaType.APPLICATION_JSON)

@@ -17,8 +17,10 @@ export function isHeading(row) {
   return row.kind === 'heading'
 }
 
-export function emptyForm() {
+// language: what the recipe will be written in, by default the site language
+export function emptyForm(language = 'hu') {
   return {
+    language,
     name: '',
     description: '',
     servings: '',
@@ -32,8 +34,10 @@ export function emptyForm() {
   }
 }
 
+// `recipe` must be the original (useRecipe(id, { original: true })), not a translation
 export function formFromRecipe(recipe) {
   return {
+    language: recipe.originalLanguage ?? recipe.language ?? 'hu',
     name: recipe.name,
     description: recipe.description ?? '',
     servings: toText(recipe.servings),
@@ -142,6 +146,7 @@ export function toRequest(values, ingredientIds) {
       notes: blankToNull(values.notes),
       imageUrl: blankToNull(values.imageUrl),
       categoryIds: values.categoryIds,
+      language: values.language,
       ingredients: lines.map((line) => ({
         ingredientId: ingredientIds.get(normalizeName(line.name)),
         amount: toNumber(line.amount.replace(',', '.')),

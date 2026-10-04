@@ -2,6 +2,7 @@ package family.cookbook.recipe;
 
 
 import family.cookbook.category.Category;
+import family.cookbook.translation.Languages;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -32,6 +33,9 @@ public class Recipe {
     private UUID id;
     @Column(nullable = false)
     private String name;
+    // Language the recipe is written in (see Languages); translations are stored separately
+    @Column(nullable = false, length = 5)
+    private String language = Languages.DEFAULT;
     private String description;
     private Integer servings;
     private Integer prepTimeMinutes;
@@ -75,6 +79,14 @@ public class Recipe {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
     }
 
     public String getDescription() {

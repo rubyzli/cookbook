@@ -17,3 +17,7 @@ cookbook:
   # Folder whose files are served at /images/..., for recipe photos. Kept outside the project so
   # photos aren't committed or packaged; set COOKBOOK_IMAGES_DIR to use another folder.
   images-dir: ${COOKBOOK_IMAGES_DIR:${user.home}/cookbook-images}
+  # DeepL API key for machine translation (https://www.deepl.com/pro-api). Without it, recipes can
+  # still be translated by hand; only the "translate automatically" buttons are hidden.
+  deepl:
+    api-key: ${DEEPL_API_KEY:}

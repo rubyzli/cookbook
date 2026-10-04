@@ -1,9 +1,18 @@
 import { useId, useState } from 'react'
 import { Link } from 'react-router'
 import { ApiError } from '../api/client.js'
-import { useCreateItem, useDeleteItem, useRenameItem } from '../api/queries.js'
+import {
+  allNames,
+  useCreateItem,
+  useDeleteItem,
+  useFillNameTranslations,
+  useRenameItem,
+  useSaveNameTranslations,
+  useTranslationSettings,
+} from '../api/queries.js'
 import { useI18n } from '../i18n/context.js'
 import { errorMessage } from '../i18n/errors.js'
+import { LANGUAGES } from '../i18n/translate.js'
 
 const MAX_NAME_LENGTH = 255
 
@@ -16,13 +25,16 @@ export default function NameListSection({ kind, query, labels, linkToRecipes, bl
 
   const items = query.data ?? []
   const needle = filter.trim().toLocaleLowerCase(language)
-  const visible = needle ? items.filter((item) => item.name.toLocaleLowerCase(language).includes(needle)) : items
+  const visible = needle
+    ? items.filter((item) => allNames(item).some((name) => name.toLocaleLowerCase(language).includes(needle)))
+    : items
 
   return (
     <section className="name-list" aria-labelledby={headingId}>
       <h2 id={headingId}>{t(labels.title)}</h2>
 
       <AddForm kind={kind} labels={labels} />
+      <FillTranslations kind={kind} />
 
       {query.isPending && <p className="hint">…</p>}
       {query.isError && (
@@ -132,13 +144,14 @@ function NameRow({ kind, item, labels, linkToRecipes, blockDeleteWhenUsed }) {
   const { t } = useI18n()
   const rename = useRenameItem(kind)
   const remove = useDeleteItem(kind)
+  const original = item.originalName ?? item.name
   const [mode, setMode] = useState('view')
-  const [draft, setDraft] = useState(item.name)
+  const [draft, setDraft] = useState(original)
   const [error, setError] = useState(null)
   const errorId = useId()
 
   function startRename() {
-    setDraft(item.name)
+    setDraft(original)
     setError(null)
     setMode('rename')
   }
@@ -161,7 +174,7 @@ function NameRow({ kind, item, labels, linkToRecipes, blockDeleteWhenUsed }) {
       setError(invalid)
       return
     }
-    if (draft.trim() === item.name) {
+    if (draft.trim() === original) {
       backToView()
       return
     }
@@ -200,7 +213,7 @@ function NameRow({ kind, item, labels, linkToRecipes, blockDeleteWhenUsed }) {
         <form className="rename-form" onSubmit={saveRename} noValidate>
           <input
             type="text"
-            aria-label={t('manage.renameLabel', { name: item.name })}
+            aria-label={t('manage.renameLabel', { name: original })}
             value={draft}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? errorId : undefined}
@@ -228,30 +241,37 @@ function NameRow({ kind, item, labels, linkToRecipes, blockDeleteWhenUsed }) {
   return (
     <li className="name-row">
       <div className="name-row-main">
-        <span className="name">{item.name}</span>
+        <span className="name" lang={item.originalLanguage}>
+          {original}
+        </span>
         {usage}
+        <TranslatedNames item={item} />
       </div>
       {mode === 'view' && (
         <div className="row-buttons">
+          <button type="button" className="button ghost" onClick={() => setMode('translations')}>
+            {t('manage.translations')}
+          </button>
           <button type="button" className="button ghost" onClick={startRename}>
             {t('manage.rename')}
           </button>
           <button
             type="button"
             className="button ghost danger-text"
-            aria-label={t('manage.deleteLabel', { name: item.name })}
+            aria-label={t('manage.deleteLabel', { name: original })}
             onClick={startDelete}
           >
             {t('manage.delete')}
           </button>
         </div>
       )}
+      {mode === 'translations' && <TranslationsForm kind={kind} item={item} onDone={backToView} />}
       {mode === 'confirm' && (
         <div className="row-confirm" role="group" aria-label={t('manage.confirmDeleteLabel')}>
           <span>
             {item.recipeCount > 0 && labels.deleteConfirmUsed
-              ? t(labels.deleteConfirmUsed, { name: item.name, count: item.recipeCount })
-              : t('manage.deleteConfirm', { name: item.name })}
+              ? t(labels.deleteConfirmUsed, { name: original, count: item.recipeCount })
+              : t('manage.deleteConfirm', { name: original })}
           </span>
           <button type="button" className="button danger" onClick={confirmDelete} disabled={remove.isPending}>
             {t('detail.confirmDeleteYes')}
@@ -271,5 +291,107 @@ function NameRow({ kind, item, labels, linkToRecipes, blockDeleteWhenUsed }) {
       )}
       {error && <p className="field-error">{error}</p>}
     </li>
+  )
+}
+
+// "DE Mehl · EN flour" under a name, marking names that came from machine translation
+function TranslatedNames({ item }) {
+  const { t } = useI18n()
+  const entries = LANGUAGES.filter(({ code }) => item.translations?.[code])
+  if (entries.length === 0) return null
+  return (
+    <span className="translated-names">
+      {entries.map(({ code }) => (
+        <span key={code} lang={code}>
+          <abbr className="lang-code" title={t(`language.${code}`)}>
+            {code.toUpperCase()}
+          </abbr>{' '}
+          {item.translations[code].name}
+          {item.translations[code].status === 'MACHINE' && <span className="machine-mark"> · {t('manage.machineMark')}</span>}
+        </span>
+      ))}
+    </span>
+  )
+}
+
+// The name in each other language; saving a field marks it as checked, clearing it removes it
+function TranslationsForm({ kind, item, onDone }) {
+  const { t } = useI18n()
+  const saveNames = useSaveNameTranslations(kind)
+  const others = LANGUAGES.filter(({ code }) => code !== (item.originalLanguage ?? 'hu'))
+  const [values, setValues] = useState(() =>
+    Object.fromEntries(others.map(({ code }) => [code, item.translations?.[code]?.name ?? ''])),
+  )
+  const [error, setError] = useState(null)
+  const original = item.originalName ?? item.name
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    // Only what changed, so untouched machine translations keep their mark
+    const changes = Object.fromEntries(
+      Object.entries(values).filter(([code, name]) => name.trim() !== (item.translations?.[code]?.name ?? '')),
+    )
+    try {
+      if (Object.keys(changes).length > 0) await saveNames.mutateAsync({ id: item.id, changes })
+      onDone()
+    } catch (e) {
+      setError(t('manage.saveFailed', { message: errorMessage(e, t) }))
+    }
+  }
+
+  return (
+    <form className="rename-form translations-form" onSubmit={handleSubmit} noValidate>
+      {others.map(({ code }) => (
+        <label key={code} className="translation-input">
+          <abbr className="lang-code" title={t(`language.${code}`)}>
+            {code.toUpperCase()}
+          </abbr>
+          <input
+            type="text"
+            lang={code}
+            aria-label={t('manage.translationLabel', { name: original, language: t(`language.${code}`) })}
+            value={values[code]}
+            onChange={(event) => setValues((current) => ({ ...current, [code]: event.target.value }))}
+          />
+        </label>
+      ))}
+      <button type="submit" className="button primary" disabled={saveNames.isPending}>
+        {t('common.save')}
+      </button>
+      <button type="button" className="button ghost" onClick={onDone}>
+        {t('common.cancel')}
+      </button>
+      {error && <p className="field-error">{error}</p>}
+    </form>
+  )
+}
+
+// Machine-translates every name in the list that has no translation yet, into all languages
+function FillTranslations({ kind }) {
+  const { t } = useI18n()
+  const settings = useTranslationSettings()
+  const fill = useFillNameTranslations(kind)
+  if (!settings.data?.machineTranslation) return null
+  return (
+    <div className="fill-translations">
+      <button
+        type="button"
+        className="button ghost small"
+        disabled={fill.isPending}
+        onClick={() => fill.mutate(LANGUAGES.map(({ code }) => code))}
+      >
+        {fill.isPending ? t('translation.translating') : t('manage.fillTranslations')}
+      </button>
+      {fill.isSuccess && (
+        <span className="hint" role="status">
+          {t('manage.filled', { count: fill.data })}
+        </span>
+      )}
+      {fill.isError && (
+        <span className="field-error" role="alert">
+          {t('translation.failed', { message: errorMessage(fill.error, t) })}
+        </span>
+      )}
+    </div>
   )
 }

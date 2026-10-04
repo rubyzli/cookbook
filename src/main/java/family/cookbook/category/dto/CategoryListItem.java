@@ -1,7 +1,18 @@
 package family.cookbook.category.dto;
 
+import family.cookbook.translation.TranslationLookup.TranslatedName;
+
+import java.util.Map;
 import java.util.UUID;
 
-// List entry with the number of recipes using this category, so a client can warn before deleting
-public record CategoryListItem(UUID id, String name, long recipeCount) {
+// name is in the requested language where a translation exists, otherwise the original. Every
+// translation is included too, so clients can match a name typed in any language, and recipeCount
+// lets them warn before deleting.
+public record CategoryListItem(
+        UUID id,
+        String name,
+        String originalName,
+        String originalLanguage,
+        long recipeCount,
+        Map<String, TranslatedName> translations) {
 }

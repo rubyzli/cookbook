@@ -263,6 +263,7 @@ main.container {
 /* Inputs shared by the search box and the recipe form */
 .toolbar input,
 .recipe-form input,
+.recipe-form select,
 .recipe-form textarea {
   font: inherit;
   color: var(--text);
@@ -281,6 +282,7 @@ main.container {
 
 .toolbar input:focus-visible,
 .recipe-form input:focus-visible,
+.recipe-form select:focus-visible,
 .recipe-form textarea:focus-visible,
 .button:focus-visible,
 .icon-button:focus-visible,
@@ -1226,4 +1228,199 @@ a.usage {
 
 .name-row .field-error {
   flex-basis: 100%;
+}
+
+/* Translations */
+
+.button.small {
+  padding: 0.3rem 0.8rem;
+  font-size: 0.88rem;
+}
+
+.translation-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0 0 1.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius-sm);
+  background: var(--sage-soft);
+  color: var(--text);
+  font-size: 0.93rem;
+}
+
+.translation-notice > span {
+  flex: 1 1 16rem;
+}
+
+.translation-notice.warning {
+  background: var(--accent-soft);
+}
+
+.translation-notice .field-error {
+  flex-basis: 100%;
+}
+
+.recipe-card-media {
+  position: relative;
+}
+
+.lang-tag {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  box-shadow: var(--shadow-sm);
+}
+
+.target-languages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.target-languages .filter-chip {
+  text-decoration: none;
+}
+
+.target-languages .filter-chip[aria-current='page'] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--surface);
+}
+
+.translate-form {
+  max-width: 64rem;
+}
+
+.translate-form .translation-notice {
+  margin: 0;
+}
+
+.translate-columns,
+.translate-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.4rem 1.25rem;
+}
+
+.translate-columns {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.translate-field > label {
+  grid-column: 1 / -1;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.translate-original {
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--muted);
+  white-space: pre-line;
+  min-height: 2.5rem;
+}
+
+.translate-input {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.translate-input input,
+.translate-input textarea {
+  width: 100%;
+}
+
+.translate-input textarea {
+  field-sizing: content;
+}
+
+.translate-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.translate-groups legend {
+  margin-bottom: 0.4rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.push-right {
+  margin-left: auto;
+}
+
+.row-confirm.inline {
+  flex-basis: auto;
+  padding: 0;
+  background: none;
+  margin-left: auto;
+}
+
+@media (max-width: 700px) {
+  .translate-columns {
+    display: none;
+  }
+
+  .translate-field {
+    grid-template-columns: 1fr;
+  }
+}
+
+.translated-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.75rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.lang-code {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--sage);
+  text-decoration: none;
+}
+
+.machine-mark {
+  font-style: italic;
+}
+
+.translations-form .translation-input {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1 1 12rem;
+}
+
+.translations-form .translation-input input {
+  flex: 1;
+}
+
+.fill-translations {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }

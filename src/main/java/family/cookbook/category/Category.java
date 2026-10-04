@@ -1,5 +1,6 @@
 package family.cookbook.category;
 
+import family.cookbook.translation.Languages;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,12 +17,20 @@ public class Category {
     private UUID id;
     @Column(nullable = false)
     private String name;
+    // Language the name is written in (see Languages)
+    @Column(nullable = false, length = 5)
+    private String language;
 
     protected Category() {
     }
 
     public Category(String name) {
+        this(name, Languages.DEFAULT);
+    }
+
+    public Category(String name, String language) {
         this.name = name;
+        this.language = language;
     }
 
     public UUID getId() {
@@ -38,5 +47,9 @@ public class Category {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getLanguage() {
+        return language;
     }
 }

@@ -6,6 +6,7 @@ import family.cookbook.recipe.dto.RecipeIngredientRequest;
 import family.cookbook.recipe.dto.RecipeIngredientResponse;
 import family.cookbook.recipe.dto.RecipeRequest;
 import family.cookbook.recipe.dto.RecipeSummary;
+import family.cookbook.translation.TranslationStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -48,7 +49,7 @@ class RecipeControllerTest {
 
     @Test
     void searchRecipesReturnsSummaries() throws Exception {
-        when(recipeService.searchRecipes("", null)).thenReturn(List.of(summary("Lasagna")));
+        when(recipeService.searchRecipes("", null, Optional.empty())).thenReturn(List.of(summary("Lasagna")));
 
         mockMvc.perform(get("/api/recipes"))
                 .andExpect(status().isOk())
@@ -60,7 +61,7 @@ class RecipeControllerTest {
 
     @Test
     void searchRecipesPassesSearchAndCategoryFilter() throws Exception {
-        when(recipeService.searchRecipes("las", CATEGORY_ID)).thenReturn(List.of(summary("Lasagna")));
+        when(recipeService.searchRecipes("las", CATEGORY_ID, Optional.empty())).thenReturn(List.of(summary("Lasagna")));
 
         mockMvc.perform(get("/api/recipes").param("search", "las").param("categoryId", CATEGORY_ID.toString()))
                 .andExpect(status().isOk())
@@ -76,7 +77,7 @@ class RecipeControllerTest {
     @Test
     void getRecipeByIdReturnsDetail() throws Exception {
         RecipeDetail detail = detail("Lasagna");
-        when(recipeService.getRecipeById(detail.id())).thenReturn(Optional.of(detail));
+        when(recipeService.getRecipeById(detail.id(), Optional.empty())).thenReturn(Optional.of(detail));
 
         mockMvc.perform(get("/api/recipes/{id}", detail.id()))
                 .andExpect(status().isOk())
@@ -88,12 +89,58 @@ class RecipeControllerTest {
                 .andExpect(jsonPath("$.ingredients[0].unit").value("g"))
                 .andExpect(jsonPath("$.ingredients[0].group").value("For the layers"))
                 .andExpect(jsonPath("$.notes").value("Rest 10 minutes before cutting."))
+                .andExpect(jsonPath("$.language").value("de"))
+                .andExpect(jsonPath("$.originalLanguage").value("hu"))
+                .andExpect(jsonPath("$.translationStatus").value("MACHINE"))
+                .andExpect(jsonPath("$.translationOutdated").value(true))
                 .andExpect(jsonPath("$.createdAt").value("2026-10-03T12:00:00Z"));
     }
 
     @Test
+    void readsPassTheLanguageFromAcceptLanguage() throws Exception {
+        RecipeDetail detail = detail("Lasagne");
+        when(recipeService.searchRecipes("", null, Optional.of("hu"))).thenReturn(List.of(summary("Lasagne")));
+        when(recipeService.getRecipeById(detail.id(), Optional.of("de"))).thenReturn(Optional.of(detail));
+
+        mockMvc.perform(get("/api/recipes").header("Accept-Language", "hu-HU,hu;q=0.9"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Lasagne"));
+        mockMvc.perform(get("/api/recipes/{id}", detail.id()).header("Accept-Language", "de"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Lasagne"));
+    }
+
+    @Test
+    void getRecipeByIdWithOriginalIgnoresTheLanguage() throws Exception {
+        RecipeDetail detail = detail("Lasagna");
+        when(recipeService.getRecipeById(detail.id(), Optional.empty())).thenReturn(Optional.of(detail));
+
+        mockMvc.perform(get("/api/recipes/{id}", detail.id()).param("original", "true").header("Accept-Language", "de"))
+                .andExpect(status().isOk());
+
+        verify(recipeService, never()).getRecipeById(detail.id(), Optional.of("de"));
+    }
+
+    @Test
+    void unsupportedAcceptLanguageShowsOriginals() throws Exception {
+        when(recipeService.searchRecipes("", null, Optional.empty())).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/recipes").header("Accept-Language", "fr-FR"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void createRecipeReturns400ForUnsupportedLanguage() throws Exception {
+        mockMvc.perform(post("/api/recipes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Lasagna\", \"language\": \"fr\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors.language").exists());
+    }
+
+    @Test
     void getRecipeByIdReturns404WhenMissing() throws Exception {
-        when(recipeService.getRecipeById(any())).thenReturn(Optional.empty());
+        when(recipeService.getRecipeById(any(), any())).thenReturn(Optional.empty());
 
         mockMvc.perform(get("/api/recipes/{id}", UUID.randomUUID()))
                 .andExpect(status().isNotFound());
@@ -109,7 +156,7 @@ class RecipeControllerTest {
     void createRecipeReturns201AndPassesFullRequest() throws Exception {
         RecipeRequest expected = new RecipeRequest("Lasagna", "Classic", 6, 20, 60, "Layer and bake.",
                 "Rest 10 minutes before cutting.", null, List.of(CATEGORY_ID),
-                List.of(new RecipeIngredientRequest(INGREDIENT_ID, new BigDecimal("500"), "g", "For the layers")));
+                List.of(new RecipeIngredientRequest(INGREDIENT_ID, new BigDecimal("500"), "g", "For the layers")), "de");
         when(recipeService.createRecipe(expected)).thenReturn(detail("Lasagna"));
 
         mockMvc.perform(post("/api/recipes")
@@ -123,6 +170,7 @@ class RecipeControllerTest {
                                   "cookTimeMinutes": 60,
                                   "instructions": "Layer and bake.",
                                   "notes": "Rest 10 minutes before cutting.",
+                                  "language": "de",
                                   "categoryIds": ["%s"],
                                   "ingredients": [{"ingredientId": "%s", "amount": 500, "unit": "g", "group": " For the layers "}]
                                 }
@@ -133,7 +181,7 @@ class RecipeControllerTest {
 
     @Test
     void createRecipeTreatsMissingListsAsEmpty() throws Exception {
-        RecipeRequest expected = new RecipeRequest("Lasagna", null, null, null, null, null, null, null, List.of(), List.of());
+        RecipeRequest expected = new RecipeRequest("Lasagna", null, null, null, null, null, null, null, List.of(), List.of(), null);
         when(recipeService.createRecipe(expected)).thenReturn(detail("Lasagna"));
 
         mockMvc.perform(post("/api/recipes")
@@ -169,7 +217,7 @@ class RecipeControllerTest {
     @Test
     void createRecipeTreatsBlankGroupAsNone() throws Exception {
         RecipeRequest expected = new RecipeRequest("Lasagna", null, null, null, null, null, null, null, List.of(),
-                List.of(new RecipeIngredientRequest(INGREDIENT_ID, null, null, null)));
+                List.of(new RecipeIngredientRequest(INGREDIENT_ID, null, null, null)), null);
         when(recipeService.createRecipe(expected)).thenReturn(detail("Lasagna"));
 
         mockMvc.perform(post("/api/recipes")
@@ -271,7 +319,7 @@ class RecipeControllerTest {
 
     private static RecipeSummary summary(String name) {
         return new RecipeSummary(UUID.randomUUID(), name, null, null, 6, 20, 60,
-                List.of(new CategoryRef(CATEGORY_ID, "Italian")));
+                List.of(new CategoryRef(CATEGORY_ID, "Italian")), "hu", "hu", null);
     }
 
     private static RecipeDetail detail(String name) {
@@ -279,6 +327,6 @@ class RecipeControllerTest {
                 "Rest 10 minutes before cutting.", null, null, Instant.parse("2026-10-03T12:00:00Z"),
                 List.of(new CategoryRef(CATEGORY_ID, "Italian")),
                 List.of(new RecipeIngredientResponse(INGREDIENT_ID, "Pasta sheets", new BigDecimal("500"), "g",
-                        "For the layers")));
+                        "For the layers")), "de", "hu", TranslationStatus.MACHINE, true);
     }
 }

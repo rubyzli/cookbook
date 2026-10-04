@@ -5,7 +5,7 @@ import { useI18n } from '../i18n/context.js'
 import { emptyForm } from '../utils/recipeForm.js'
 
 export default function NewRecipePage() {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const createRecipe = useCreateRecipe()
   const navigate = useNavigate()
 
@@ -20,7 +20,7 @@ export default function NewRecipePage() {
         {t('common.backToRecipes')}
       </Link>
       <h1 className="form-title">{t('form.newTitle')}</h1>
-      <RecipeForm initialValues={emptyForm()} submitLabel={t('form.create')} cancelTo="/" onSave={save} />
+      <RecipeForm initialValues={emptyForm(language)} submitLabel={t('form.create')} cancelTo="/" onSave={save} />
     </>
   )
 }

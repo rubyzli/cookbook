@@ -8,14 +8,20 @@ import family.cookbook.recipe.dto.RecipeDetail;
 import family.cookbook.recipe.dto.RecipeIngredientRequest;
 import family.cookbook.recipe.dto.RecipeRequest;
 import family.cookbook.recipe.dto.RecipeSummary;
+import family.cookbook.translation.Languages;
+import family.cookbook.translation.Localization;
+import family.cookbook.translation.TranslationLookup;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.text.Collator;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -29,27 +35,39 @@ public class RecipeService {
     private final RecipeRepository recipeRepository;
     private final CategoryRepository categoryRepository;
     private final IngredientRepository ingredientRepository;
+    private final TranslationLookup translations;
 
     public RecipeService(RecipeRepository recipeRepository,
                          CategoryRepository categoryRepository,
-                         IngredientRepository ingredientRepository) {
+                         IngredientRepository ingredientRepository,
+                         TranslationLookup translations) {
         this.recipeRepository = recipeRepository;
         this.categoryRepository = categoryRepository;
         this.ingredientRepository = ingredientRepository;
+        this.translations = translations;
     }
 
+    // language: show translations into it where they exist; empty shows the originals
     @Transactional(readOnly = true)
-    public List<RecipeSummary> searchRecipes(String search, UUID categoryId) {
+    public List<RecipeSummary> searchRecipes(String search, UUID categoryId, Optional<String> language) {
         String name = search == null ? "" : search.strip();
+        // "" matches no translation, so only original names are searched
+        String translationLanguage = language.orElse("");
         List<Recipe> recipes = categoryId == null
-                ? recipeRepository.findByNameContainingIgnoreCaseOrderByNameAsc(name)
-                : recipeRepository.findDistinctByCategories_IdAndNameContainingIgnoreCaseOrderByNameAsc(categoryId, name);
-        return recipes.stream().map(RecipeSummary::from).toList();
+                ? recipeRepository.search(name, translationLanguage)
+                : recipeRepository.searchInCategory(name, translationLanguage, categoryId);
+        Localization localization = translations.forRecipes(language, recipes.stream().map(Recipe::getId).toList());
+        Collator collator = Collator.getInstance(Locale.forLanguageTag(language.orElse(Languages.DEFAULT)));
+        return recipes.stream()
+                .map(recipe -> RecipeSummary.from(recipe, localization))
+                .sorted(Comparator.comparing(RecipeSummary::name, collator))
+                .toList();
     }
 
     @Transactional(readOnly = true)
-    public Optional<RecipeDetail> getRecipeById(UUID id) {
-        return recipeRepository.findWithDetailsById(id).map(RecipeDetail::from);
+    public Optional<RecipeDetail> getRecipeById(UUID id, Optional<String> language) {
+        return recipeRepository.findWithDetailsById(id)
+                .map(recipe -> RecipeDetail.from(recipe, translations.forRecipes(language, List.of(id))));
     }
 
     @Transactional
@@ -58,6 +76,7 @@ public class RecipeService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Recipe already exists");
         }
         Recipe recipe = new Recipe(request.name());
+        recipe.setLanguage(request.language() == null ? Languages.DEFAULT : request.language());
         applyRequest(recipe, request);
         // Flush so createdAt is set before it goes into the response
         return RecipeDetail.from(recipeRepository.saveAndFlush(recipe));
@@ -83,6 +102,7 @@ public class RecipeService {
 
     private void applyRequest(Recipe recipe, RecipeRequest request) {
         recipe.setName(request.name());
+        if (request.language() != null) recipe.setLanguage(request.language());
         recipe.setDescription(request.description());
         recipe.setServings(request.servings());
         recipe.setPrepTimeMinutes(request.prepTimeMinutes());

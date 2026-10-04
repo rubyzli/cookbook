@@ -10,7 +10,8 @@ const saffron = { id: 'i2', name: 'Saffron', recipeCount: 0 }
 
 function routes(extra = {}) {
   return {
-    '/api/categories': [dessert, breakfast],
+    // Sorted by the server
+    '/api/categories': [breakfast, dessert],
     '/api/ingredients': [flour, saffron],
     ...extra,
   }
@@ -71,7 +72,7 @@ describe('Categories & ingredients page', () => {
     await userEvent.type(within(section('Ingredients')).getByRole('textbox', { name: 'New ingredient' }), ' Cumin {enter}')
 
     await waitFor(() =>
-      expect(sentRequests(fetchMock)).toEqual([{ method: 'POST', url: '/api/ingredients', body: { name: 'Cumin' } }]),
+      expect(sentRequests(fetchMock)).toEqual([{ method: 'POST', url: '/api/ingredients', body: { name: 'Cumin', language: 'en' } }]),
     )
     await waitFor(() =>
       expect(within(section('Ingredients')).getByRole('textbox', { name: 'New ingredient' })).toHaveValue(''),

@@ -5,27 +5,31 @@ import CategoryChips from '../components/CategoryChips.jsx'
 import RecipeImage from '../components/RecipeImage.jsx'
 import RecipeMeta from '../components/RecipeMeta.jsx'
 import StatusMessage from '../components/StatusMessage.jsx'
+import TranslationNotice from '../components/TranslationNotice.jsx'
 import { useI18n } from '../i18n/context.js'
 import { errorMessage } from '../i18n/errors.js'
 import { formatAmount } from '../utils/format.js'
+import { translateUnit } from '../utils/units.js'
 
 export default function RecipeDetailPage() {
   const { t } = useI18n()
   const { id } = useParams()
-  const recipe = useRecipe(id)
+  // The reader can switch a translated recipe back to its original language
+  const [showingOriginal, setShowingOriginal] = useState(false)
+  const recipe = useRecipe(id, { original: showingOriginal })
 
   return (
     <>
       <Link to="/" className="back-link">
         {t('common.backToRecipes')}
       </Link>
-      <RecipeDetailContent query={recipe} />
+      <RecipeDetailContent query={recipe} showingOriginal={showingOriginal} onShowOriginal={setShowingOriginal} />
     </>
   )
 }
 
-function RecipeDetailContent({ query }) {
-  const { t, language } = useI18n()
+function RecipeDetailContent({ query, showingOriginal, onShowOriginal }) {
+  const { t } = useI18n()
   if (query.isPending) {
     return <StatusMessage>{t('common.loadingRecipe')}</StatusMessage>
   }
@@ -58,14 +62,16 @@ function RecipeDetailContent({ query }) {
         )}
         <div className="recipe-detail-heading">
           <CategoryChips categories={recipe.categories} />
-          <h1>{recipe.name}</h1>
+          <h1 lang={recipe.language}>{recipe.name}</h1>
           {recipe.description && <p className="description">{recipe.description}</p>}
           <RecipeMeta recipe={recipe} showTotal pills />
           <RecipeActions recipe={recipe} />
         </div>
       </header>
 
-      <div className="recipe-detail-body">
+      <TranslationNotice recipe={recipe} showingOriginal={showingOriginal} onShowOriginal={onShowOriginal} />
+
+      <div className="recipe-detail-body" lang={recipe.language}>
         <section aria-labelledby="ingredients-heading">
           <h2 id="ingredients-heading">{t('detail.ingredients')}</h2>
           {recipe.ingredients.length === 0 ? (
@@ -78,16 +84,7 @@ function RecipeDetailContent({ query }) {
                 <ul className="ingredient-list">
                   {section.lines.map((line, index) => (
                     // Index as key: the same ingredient can appear on several lines
-                    <li key={index}>
-                      {/* Ticking off ingredients while cooking; kept only until the page is left */}
-                      <label className="ingredient-check">
-                        <input type="checkbox" />
-                        <span>
-                          <span className="amount">{formatAmount(line.amount, line.unit, language)}</span>{' '}
-                          {line.name}
-                        </span>
-                      </label>
-                    </li>
+                    <IngredientLine key={index} line={line} from={recipe.originalLanguage} to={recipe.language} />
                   ))}
                 </ul>
               </div>
@@ -150,6 +147,23 @@ function RecipeActions({ recipe }) {
         {t('detail.delete')}
       </button>
     </div>
+  )
+}
+
+// Units follow fixed rules when the recipe is shown in another language than it was written in
+function IngredientLine({ line, from, to }) {
+  const { language } = useI18n()
+  const { amount, unit } = translateUnit(line.amount, line.unit, from, to)
+  return (
+    <li>
+      {/* Ticking off ingredients while cooking; kept only until the page is left */}
+      <label className="ingredient-check">
+        <input type="checkbox" />
+        <span>
+          <span className="amount">{formatAmount(amount, unit, language)}</span> {line.name}
+        </span>
+      </label>
+    </li>
   )
 }
 

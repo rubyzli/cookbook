@@ -10,6 +10,11 @@ import family.cookbook.recipe.dto.RecipeIngredientRequest;
 import family.cookbook.recipe.dto.RecipeIngredientResponse;
 import family.cookbook.recipe.dto.RecipeRequest;
 import family.cookbook.recipe.dto.RecipeSummary;
+import family.cookbook.translation.Localization;
+import family.cookbook.translation.RecipeTranslation;
+import family.cookbook.translation.SourceText;
+import family.cookbook.translation.TranslationLookup;
+import family.cookbook.translation.TranslationStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,6 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -28,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -44,36 +51,60 @@ class RecipeServiceTest {
     @Mock
     private IngredientRepository ingredientRepository;
 
+    @Mock
+    private TranslationLookup translationLookup;
+
     @InjectMocks
     private RecipeService recipeService;
 
     @Test
     void searchRecipesWithoutCategorySearchesByTrimmedName() {
         Recipe recipe = recipe("Lasagna");
-        when(recipeRepository.findByNameContainingIgnoreCaseOrderByNameAsc("las")).thenReturn(List.of(recipe));
+        when(recipeRepository.search("las", "")).thenReturn(List.of(recipe));
+        when(translationLookup.forRecipes(Optional.empty(), List.of(recipe.getId()))).thenReturn(Localization.original());
 
-        List<RecipeSummary> result = recipeService.searchRecipes("  las ", null);
+        List<RecipeSummary> result = recipeService.searchRecipes("  las ", null, Optional.empty());
 
         assertThat(result).extracting(RecipeSummary::name).containsExactly("Lasagna");
+        assertThat(result).extracting(RecipeSummary::language).containsExactly("hu");
     }
 
     @Test
     void searchRecipesWithCategoryFiltersByCategory() {
         UUID categoryId = UUID.randomUUID();
-        when(recipeRepository.findDistinctByCategories_IdAndNameContainingIgnoreCaseOrderByNameAsc(categoryId, ""))
-                .thenReturn(List.of(recipe("Lasagna")));
+        when(recipeRepository.searchInCategory("", "de", categoryId)).thenReturn(List.of(recipe("Lasagna")));
+        when(translationLookup.forRecipes(eq(Optional.of("de")), any())).thenReturn(Localization.original());
 
-        List<RecipeSummary> result = recipeService.searchRecipes("", categoryId);
+        List<RecipeSummary> result = recipeService.searchRecipes("", categoryId, Optional.of("de"));
 
         assertThat(result).extracting(RecipeSummary::name).containsExactly("Lasagna");
-        verify(recipeRepository, never()).findByNameContainingIgnoreCaseOrderByNameAsc(any());
+        verify(recipeRepository, never()).search(any(), any());
     }
 
     @Test
     void searchRecipesTreatsNullSearchAsMatchAll() {
-        when(recipeRepository.findByNameContainingIgnoreCaseOrderByNameAsc("")).thenReturn(List.of());
+        when(recipeRepository.search("", "")).thenReturn(List.of());
+        when(translationLookup.forRecipes(Optional.empty(), List.of())).thenReturn(Localization.original());
 
-        assertThat(recipeService.searchRecipes(null, null)).isEmpty();
+        assertThat(recipeService.searchRecipes(null, null, Optional.empty())).isEmpty();
+    }
+
+    @Test
+    void searchRecipesShowsTranslationsAndSortsByTheShownName() {
+        Recipe applePie = recipe("Almás pite");
+        Recipe beanSoup = recipe("Bableves");
+        RecipeTranslation german = translation(applePie, "de", "Zwetschgenkuchen", TranslationStatus.MACHINE);
+        when(recipeRepository.search("", "de")).thenReturn(List.of(applePie, beanSoup));
+        when(translationLookup.forRecipes(eq(Optional.of("de")), any()))
+                .thenReturn(new Localization("de", Map.of(applePie.getId(), german), Map.of(), Map.of()));
+
+        List<RecipeSummary> result = recipeService.searchRecipes("", null, Optional.of("de"));
+
+        assertThat(result).extracting(RecipeSummary::name).containsExactly("Bableves", "Zwetschgenkuchen");
+        assertThat(result.get(1).language()).isEqualTo("de");
+        assertThat(result.get(1).originalLanguage()).isEqualTo("hu");
+        assertThat(result.get(1).translationStatus()).isEqualTo(TranslationStatus.MACHINE);
+        assertThat(result.get(0).translationStatus()).isNull();
     }
 
     @Test
@@ -81,20 +112,46 @@ class RecipeServiceTest {
         Recipe recipe = recipe("Lasagna");
         recipe.setInstructions("Layer and bake.");
         when(recipeRepository.findWithDetailsById(recipe.getId())).thenReturn(Optional.of(recipe));
+        when(translationLookup.forRecipes(Optional.empty(), List.of(recipe.getId()))).thenReturn(Localization.original());
 
-        assertThat(recipeService.getRecipeById(recipe.getId()))
+        assertThat(recipeService.getRecipeById(recipe.getId(), Optional.empty()))
                 .hasValueSatisfying(detail -> {
                     assertThat(detail.id()).isEqualTo(recipe.getId());
                     assertThat(detail.instructions()).isEqualTo("Layer and bake.");
+                    assertThat(detail.language()).isEqualTo("hu");
+                    assertThat(detail.translationStatus()).isNull();
                 });
     }
 
     @Test
-    void getRecipeByIdReturnsEmptyWhenMissing() {
-        UUID id = UUID.randomUUID();
-        when(recipeRepository.findWithDetailsById(id)).thenReturn(Optional.empty());
+    void getRecipeByIdShowsTheTranslationAndNoticesLaterEditsToTheOriginal() {
+        Category salad = category("Saláta");
+        Ingredient potato = ingredient("krumpli");
+        Recipe recipe = recipe("Krumpli saláta");
+        recipe.setInstructions("Főzzük meg.");
+        recipe.replaceCategories(List.of(salad));
+        recipe.replaceIngredients(List.of(new RecipeIngredient(recipe, potato, BigDecimal.ONE, "kg", "A salátához", 0)));
+        RecipeTranslation german = translation(recipe, "de", "Kartoffelsalat", TranslationStatus.REVIEWED);
+        german.update("Kartoffelsalat", null, "Kochen.", null, Map.of("A salátához", "Für den Salat"),
+                TranslationStatus.REVIEWED, SourceText.hash(recipe));
+        when(recipeRepository.findWithDetailsById(recipe.getId())).thenReturn(Optional.of(recipe));
+        when(translationLookup.forRecipes(Optional.of("de"), List.of(recipe.getId()))).thenReturn(new Localization("de",
+                Map.of(recipe.getId(), german), Map.of(salad.getId(), "Salat"), Map.of(potato.getId(), "Kartoffeln")));
 
-        assertThat(recipeService.getRecipeById(id)).isEmpty();
+        RecipeDetail detail = recipeService.getRecipeById(recipe.getId(), Optional.of("de")).orElseThrow();
+
+        assertThat(detail.name()).isEqualTo("Kartoffelsalat");
+        assertThat(detail.instructions()).isEqualTo("Kochen.");
+        assertThat(detail.language()).isEqualTo("de");
+        assertThat(detail.translationStatus()).isEqualTo(TranslationStatus.REVIEWED);
+        assertThat(detail.translationOutdated()).isFalse();
+        assertThat(detail.categories()).extracting(CategoryRef::name).containsExactly("Salat");
+        assertThat(detail.ingredients()).containsExactly(
+                new RecipeIngredientResponse(potato.getId(), "Kartoffeln", BigDecimal.ONE, "kg", "Für den Salat"));
+
+        recipe.setInstructions("Főzzük meg sós vízben.");
+
+        assertThat(recipeService.getRecipeById(recipe.getId(), Optional.of("de")).orElseThrow().translationOutdated()).isTrue();
     }
 
     @Test
@@ -107,7 +164,7 @@ class RecipeServiceTest {
                 "Use tart apples.", null,
                 List.of(dessert.getId(), baking.getId()),
                 List.of(line(flour, "250", "g", "For the dough"), line(butter, "125", "g", "For the dough"),
-                        line(butter, "1", "tbsp", "For the top")));
+                        line(butter, "1", "tbsp", "For the top")), "en");
         when(recipeRepository.existsByNameIgnoreCase("Apple Pie")).thenReturn(false);
         when(categoryRepository.findAllById(Set.of(dessert.getId(), baking.getId()))).thenReturn(List.of(dessert, baking));
         when(ingredientRepository.findAllById(Set.of(flour.getId(), butter.getId()))).thenReturn(List.of(flour, butter));
@@ -122,6 +179,7 @@ class RecipeServiceTest {
         assertThat(created.cookTimeMinutes()).isEqualTo(45);
         assertThat(created.instructions()).isEqualTo("Mix. Bake.");
         assertThat(created.notes()).isEqualTo("Use tart apples.");
+        assertThat(created.originalLanguage()).isEqualTo("en");
         assertThat(created.categories()).extracting(CategoryRef::name).containsExactly("Baking", "Dessert");
         assertThat(created.ingredients()).containsExactly(
                 new RecipeIngredientResponse(flour.getId(), "Flour", new BigDecimal("250"), "g", "For the dough"),
@@ -202,11 +260,12 @@ class RecipeServiceTest {
         when(recipeRepository.saveAndFlush(recipe)).thenReturn(recipe);
 
         RecipeRequest request = new RecipeRequest("Apple Pie", null, null, null, null, null, null, null,
-                List.of(italian.getId()), List.of(line(sugar, "100", "g")));
+                List.of(italian.getId()), List.of(line(sugar, "100", "g")), null);
         Optional<RecipeDetail> updated = recipeService.updateRecipe(recipe.getId(), request);
 
         assertThat(updated).hasValueSatisfying(detail -> {
             assertThat(detail.name()).isEqualTo("Apple Pie");
+            assertThat(detail.originalLanguage()).isEqualTo("hu");
             assertThat(detail.servings()).isNull();
             assertThat(detail.categories()).extracting(CategoryRef::name).containsExactly("Italian");
             assertThat(detail.ingredients()).extracting(RecipeIngredientResponse::name).containsExactly("Sugar");
@@ -245,8 +304,14 @@ class RecipeServiceTest {
         verify(recipeRepository).deleteById(id);
     }
 
+    private static RecipeTranslation translation(Recipe recipe, String language, String name, TranslationStatus status) {
+        RecipeTranslation translation = new RecipeTranslation(recipe.getId(), language);
+        translation.update(name, null, null, null, Map.of(), status, SourceText.hash(recipe));
+        return translation;
+    }
+
     private static RecipeRequest request(String name, List<UUID> categoryIds, List<RecipeIngredientRequest> ingredients) {
-        return new RecipeRequest(name, null, null, null, null, null, null, null, categoryIds, ingredients);
+        return new RecipeRequest(name, null, null, null, null, null, null, null, categoryIds, ingredients, null);
     }
 
     private static RecipeIngredientRequest line(Ingredient ingredient, String amount, String unit) {

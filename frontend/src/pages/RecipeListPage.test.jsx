@@ -45,9 +45,10 @@ describe('RecipeListPage', () => {
   it('lists categories alphabetically in the filter, with counts, leaving out unused ones', async () => {
     mockApi({
       '/api/recipes': [],
+      // Sorted by the server
       '/api/categories': [
-        { ...italian, recipeCount: 1 },
         { ...dessert, recipeCount: 3 },
+        { ...italian, recipeCount: 1 },
         { id: 'c3', name: 'Unused', recipeCount: 0 },
       ],
     })

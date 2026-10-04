@@ -2,6 +2,7 @@ package family.cookbook.recipe;
 
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -11,11 +12,27 @@ public interface RecipeRepository extends JpaRepository<Recipe, UUID> {
 
     // Entity graphs load the associations in the same query instead of one query per recipe
 
+    // Matches the original name or the name translated into `language`; sorting happens after
+    // localizing, by the name that is shown
     @EntityGraph(attributePaths = "categories")
-    List<Recipe> findByNameContainingIgnoreCaseOrderByNameAsc(String name);
+    @Query("""
+            select distinct r from Recipe r
+            left join RecipeTranslation t on t.id.ownerId = r.id and t.id.language = :language
+            where lower(r.name) like lower(concat('%', :search, '%'))
+               or lower(t.name) like lower(concat('%', :search, '%'))
+            """)
+    List<Recipe> search(String search, String language);
 
     @EntityGraph(attributePaths = "categories")
-    List<Recipe> findDistinctByCategories_IdAndNameContainingIgnoreCaseOrderByNameAsc(UUID categoryId, String name);
+    @Query("""
+            select distinct r from Recipe r
+            join r.categories c
+            left join RecipeTranslation t on t.id.ownerId = r.id and t.id.language = :language
+            where c.id = :categoryId
+              and (lower(r.name) like lower(concat('%', :search, '%'))
+                   or lower(t.name) like lower(concat('%', :search, '%')))
+            """)
+    List<Recipe> searchInCategory(String search, String language, UUID categoryId);
 
     // Fetching categories here too would repeat every ingredient line once per category;
     // they load lazily in a second query instead

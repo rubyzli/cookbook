@@ -54,6 +54,28 @@ Photos are files in an images folder outside the project, `~/cookbook-images` by
 recipe's photo URL can be `/images/lecso.jpg`. Full `https://...` links to photos elsewhere work too.
 The folder isn't in git or in the jar, so back it up along with the database.
 
+## Translating recipes
+
+Every recipe, ingredient and category is stored in the language it was written in (English, German
+or Hungarian), and can have a translation into each of the others. Visitors see the version in the
+site language when one exists, and otherwise the original, marked with its language.
+
+- **Automatically:** with a [DeepL API](https://www.deepl.com/pro-api) key, "Translate automatically"
+  on a recipe page drafts a translation, including the recipe's ingredient and category names that
+  have none yet. The free plan allows 500,000+ characters a month; all recipes so far are about
+  13,000. Set the key as `DEEPL_API_KEY` for the backend (shell, IntelliJ run configuration or
+  server). It's only used by the server, never sent to the browser. Without a key, everything works
+  except the automatic buttons.
+- **By hand:** the translation page (`/recipes/{id}/translate/{language}`) shows the original next
+  to editable fields. Saving marks the translation as reviewed; machine drafts stay marked
+  "machine translation" until then.
+- **Staying in sync:** if the original is edited after translating, the translation is marked as
+  outdated until it's saved again.
+- **Units** are converted by fixed rules, not by DeepL: ek ↔ EL ↔ tbsp, kk ↔ TL ↔ tsp, db ↔ Stk.,
+  csomag ↔ Pck., and dekagrams become grams outside Hungarian (`frontend/src/utils/units.js`).
+- **Ingredient and category names** can be checked and corrected on the Categories & ingredients
+  page, which also has "Translate missing names automatically".
+
 ## Building a jar
 
 ```sh
@@ -173,8 +195,28 @@ and variations, shown separately from the numbered steps.
 | PUT    | `/api/ingredients/{id}` | Rename an ingredient (404 if none, 409 if the name is taken) |
 | DELETE | `/api/ingredients/{id}` | Delete an ingredient (409 while a recipe uses it) |
 
-Create and rename take a JSON body with a name, e.g. `{"name": "Dessert"}`. List entries look like
-`{"id": "...", "name": "Dessert", "recipeCount": 3}`.
+Create and rename take a JSON body with a name, and on create optionally the language it's written
+in, e.g. `{"name": "Dessert", "language": "en"}` (Hungarian if left out). List entries look like
+`{"id": "...", "name": "Dessert", "originalName": "Dessert", "originalLanguage": "en",
+"recipeCount": 3, "translations": {"de": {"name": "Nachspeise", "status": "MACHINE"}}}`.
+
+### Languages and translations
+
+Reads use the `Accept-Language` header: `name`, steps and so on come in that language where a
+translation exists. Responses say which language they are in (`language`), what the original is
+(`originalLanguage`), and for recipes `translationStatus` (`MACHINE`, `REVIEWED` or `null`) and
+`translationOutdated`. `GET /api/recipes/{id}?original=true` always returns the original, for
+editing. Recipes take a `language` field (`en`, `de` or `hu`).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET    | `/api/translations/settings` | Whether machine translation is set up, and the languages |
+| GET    | `/api/recipes/{id}/translations` | The original text and all translations of a recipe |
+| POST   | `/api/recipes/{id}/translations/{lang}/machine` | Machine-translate a recipe (replaces an existing translation) |
+| PUT    | `/api/recipes/{id}/translations/{lang}` | Save a translation, by default as reviewed |
+| DELETE | `/api/recipes/{id}/translations/{lang}` | Delete a translation |
+| PUT/DELETE | `/api/{ingredients,categories}/{id}/translations/{lang}` | Set or remove a name in another language |
+| POST   | `/api/{ingredients,categories}/translations/{lang}/machine` | Machine-translate all names that have no translation in that language |
 
 ### Errors
 
@@ -202,6 +244,7 @@ src/main/java/family/cookbook/
 ├── category/      Category entity, repository, service, controller
 ├── ingredient/    Ingredient entity, repository, service, controller
 ├── recipe/        Recipe entity, repository, service, controller
+├── translation/   Languages, translation tables, DeepL client, translation endpoints
 ├── ApiExceptionHandler.java   Renders errors as problem details
 ├── FrontendController.java    Serves the React app for its page URLs
 └── ImagesConfig.java          Serves the images folder at /images
@@ -209,8 +252,8 @@ src/main/java/family/cookbook/
 frontend/src/
 ├── api/           fetch wrapper (client.js) and TanStack Query hooks (queries.js)
 ├── components/    Layout, recipe card, recipe form and its parts, editable name lists
-├── i18n/          Translations (messages/en.js, de.js, hu.js) and the language switcher logic
+├── i18n/          Site texts (messages/en.js, de.js, hu.js) and the language switcher logic
 ├── pages/         One component per route, with its tests next to it
-├── utils/         Formatting, and recipe form logic (validation, request building)
+├── utils/         Formatting, unit rules for other languages, recipe form logic
 └── test/          Test setup and helpers (renderApp, mockApi)
 ```

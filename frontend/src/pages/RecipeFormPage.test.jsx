@@ -32,6 +32,8 @@ function baseRoutes(extra = {}) {
     '/api/categories': [dessert, baking],
     '/api/ingredients': [flour, butter],
     '/api/recipes/r1': applePie,
+    // The edit form loads the recipe as written
+    '/api/recipes/r1?original=true': applePie,
     '/api/recipes': [applePie],
     ...extra,
   }
@@ -77,7 +79,7 @@ describe('New recipe', () => {
 
     await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/recipes/r-new'))
     expect(sentRequests(fetchMock)).toEqual([
-      { method: 'POST', url: '/api/ingredients', body: { name: 'Cinnamon' } },
+      { method: 'POST', url: '/api/ingredients', body: { name: 'Cinnamon', language: 'en' } },
       {
         method: 'POST',
         url: '/api/recipes',
@@ -91,6 +93,7 @@ describe('New recipe', () => {
           notes: null,
           imageUrl: null,
           categoryIds: ['c2'],
+          language: 'en',
           ingredients: [
             { ingredientId: 'i1', amount: 500, unit: 'g', group: null },
             { ingredientId: 'i-new', amount: 2, unit: 'tbsp', group: null },
@@ -236,7 +239,7 @@ describe('New recipe', () => {
     expect(await screen.findByRole('checkbox', { name: 'Breakfast' })).toBeChecked()
     expect(field('New category')).toHaveValue('')
     expect(sentRequests(fetchMock)).toEqual([
-      { method: 'POST', url: '/api/categories', body: { name: 'Breakfast' } },
+      { method: 'POST', url: '/api/categories', body: { name: 'Breakfast', language: 'en' } },
     ])
   })
 
@@ -321,7 +324,11 @@ describe('Edit recipe', () => {
       ],
     }
     const fetchMock = mockApi(
-      baseRoutes({ '/api/recipes/r1': grouped, 'PUT /api/recipes/r1': ({ body }) => ({ ...grouped, ...body }) }),
+      baseRoutes({
+        '/api/recipes/r1': grouped,
+        '/api/recipes/r1?original=true': grouped,
+        'PUT /api/recipes/r1': ({ body }) => ({ ...grouped, ...body }),
+      }),
     )
     renderApp('/recipes/r1/edit')
     await screen.findByRole('heading', { level: 1, name: 'Edit Apple Pie' })
@@ -377,7 +384,10 @@ describe('Edit recipe', () => {
   })
 
   it('keeps one empty row when the last ingredient is removed', async () => {
-    mockApi(baseRoutes({ '/api/recipes/r1': { ...applePie, ingredients: [applePie.ingredients[0]] } }))
+    mockApi(baseRoutes({
+        '/api/recipes/r1': { ...applePie, ingredients: [applePie.ingredients[0]] },
+        '/api/recipes/r1?original=true': { ...applePie, ingredients: [applePie.ingredients[0]] },
+      }))
     renderApp('/recipes/r1/edit')
     await screen.findByRole('heading', { level: 1, name: 'Edit Apple Pie' })
 

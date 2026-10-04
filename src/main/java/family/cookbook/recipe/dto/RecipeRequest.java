@@ -1,8 +1,10 @@
 package family.cookbook.recipe.dto;
 
+import family.cookbook.translation.Languages;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
@@ -21,7 +23,9 @@ public record RecipeRequest(
         String notes,
         @Size(max = 255) String imageUrl,
         List<@NotNull UUID> categoryIds,
-        List<@NotNull @Valid RecipeIngredientRequest> ingredients) {
+        List<@NotNull @Valid RecipeIngredientRequest> ingredients,
+        // Language the recipe is written in; unchanged on update when left out, Hungarian on create
+        @Pattern(regexp = Languages.PATTERN) String language) {
 
     public RecipeRequest {
         categoryIds = categoryIds == null ? List.of() : categoryIds;

@@ -1,6 +1,6 @@
 package family.cookbook.ingredient;
 
-import family.cookbook.ingredient.dto.IngredientListItem;
+import family.cookbook.ingredient.dto.IngredientUsage;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -10,12 +10,11 @@ import java.util.UUID;
 public interface IngredientRepository extends JpaRepository<Ingredient, UUID> {
 
     @Query("""
-            select new family.cookbook.ingredient.dto.IngredientListItem(i.id, i.name,
+            select new family.cookbook.ingredient.dto.IngredientUsage(i.id, i.name, i.language,
                 (select count(distinct ri.recipe.id) from RecipeIngredient ri where ri.ingredient = i))
             from Ingredient i
-            order by lower(i.name)
             """)
-    List<IngredientListItem> findAllWithRecipeCount();
+    List<IngredientUsage> findAllWithRecipeCount();
 
     boolean existsByNameIgnoreCase(String name);
 
