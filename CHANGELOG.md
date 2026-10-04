@@ -86,7 +86,10 @@ so entries are grouped by date.
   `translationOutdated`; category and ingredient list entries add `originalName`,
   `originalLanguage` and `translations`.
 - Recipe, category and ingredient lists are sorted by the name shown in the requested language.
-
+- Creating a recipe, category or ingredient accepts an optional `language` (`en`, `de` or `hu`;
+  Hungarian if left out).
+- The recipe form's "Photo URL" box is replaced by the photo field; the link box is still there
+  under "Or link to a photo online".
 - App pages (`/` and page URLs such as `/recipes/{id}`) and photos under `/images/...` are sent with
   `Cache-Control: no-cache`, so browsers check with the server before reusing them.
 - A photo that fails to load (missing file, dead link) shows the letter tile instead of a
