@@ -89,6 +89,22 @@ site language when one exists, and otherwise the original, marked with its langu
 - **Ingredient and category names** can be checked and corrected on the Categories & ingredients
   page, which also has "Translate missing names automatically".
 
+## Nutrition
+
+Each recipe page shows estimated calories, protein, carbohydrates and fat, per serving when the
+number of servings is known and otherwise for the whole recipe. The estimate is made by
+[Claude](https://docs.claude.com) from the ingredient lines, which copes with units such as "db",
+"csomag" or "púpozott kanál" that can't be converted to grams by fixed rules. It's an estimate,
+and the page says so.
+
+- **When:** saving a recipe estimates it in the background if it has no estimate yet or its
+  ingredient lines changed since the last one (`recipe_nutrition.source_hash`). Changing only the
+  name, steps or servings doesn't ask again. If the request fails, the recipe is still saved, the
+  failure is logged, and the recipe page offers a "Calculate" button.
+- **Setup:** set an [Anthropic API key](https://console.anthropic.com) as `ANTHROPIC_API_KEY` for
+  the backend. `ANTHROPIC_MODEL` picks the model (default `claude-sonnet-5-5`). One estimate costs
+  well under a cent. Without a key the nutrition box is hidden, except for estimates made earlier.
+
 ## Building a jar
 
 ```sh
@@ -165,6 +181,8 @@ from the jar, `FrontendController` answers with `index.html` so the right page s
 | POST   | `/api/recipes`      | Create a recipe (201)                                              |
 | PUT    | `/api/recipes/{id}` | Replace a recipe, including its categories and ingredients (404 if none) |
 | DELETE | `/api/recipes/{id}` | Delete a recipe (204)                                              |
+| GET    | `/api/recipes/{id}/nutrition` | Estimated nutrition: `{estimate, estimatedAt, outdated, enabled}`; `estimate` is `{kcal, proteinGrams, carbsGrams, fatGrams}` for the whole recipe, or null |
+| POST   | `/api/recipes/{id}/nutrition` | Estimate again now (503 without an API key)              |
 
 POST and PUT take the same body. Only `name` is required; missing lists count as empty:
 
@@ -261,6 +279,7 @@ src/main/java/family/cookbook/
 ├── recipe/        Recipe entity, repository, service, controller
 ├── image/         Photo uploads, stored in the database and served at /api/images/{id}
 ├── translation/   Languages, translation tables, DeepL client, translation endpoints
+├── nutrition/     Calorie and macro estimates from Claude, made in the background on save
 ├── ApiExceptionHandler.java   Renders errors as problem details
 └── FrontendController.java    Serves the React app for its page URLs
 

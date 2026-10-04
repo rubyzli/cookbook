@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { useDeleteRecipe, useRecipe } from '../api/queries.js'
 import CategoryChips from '../components/CategoryChips.jsx'
+import NutritionPanel from '../components/NutritionPanel.jsx'
 import RecipeImage from '../components/RecipeImage.jsx'
 import RecipeMeta from '../components/RecipeMeta.jsx'
 import StatusMessage from '../components/StatusMessage.jsx'
@@ -65,6 +66,7 @@ function RecipeDetailContent({ query, showingOriginal, onShowOriginal }) {
           <h1 lang={recipe.language}>{recipe.name}</h1>
           {recipe.description && <p className="description">{recipe.description}</p>}
           <RecipeMeta recipe={recipe} showTotal pills />
+          <AddedOn createdAt={recipe.createdAt} />
           {recipe.sourceUrl && <SourceLink url={recipe.sourceUrl} />}
           <RecipeActions recipe={recipe} />
         </div>
@@ -99,6 +101,7 @@ function RecipeDetailContent({ query, showingOriginal, onShowOriginal }) {
             <Instructions text={recipe.instructions} />
           </section>
           <Notes text={recipe.notes} />
+          <NutritionPanel recipeId={recipe.id} servings={recipe.servings} />
         </div>
       </div>
     </article>
@@ -148,6 +151,18 @@ function RecipeActions({ recipe }) {
         {t('detail.delete')}
       </button>
     </div>
+  )
+}
+
+// "Added 3 October 2026", in the site language
+function AddedOn({ createdAt }) {
+  const { t, language } = useI18n()
+  if (!createdAt) return null
+  const date = new Intl.DateTimeFormat(language, { dateStyle: 'long' }).format(new Date(createdAt))
+  return (
+    <p className="added-on">
+      <time dateTime={createdAt}>{t('detail.added', { date })}</time>
+    </p>
   )
 }
 

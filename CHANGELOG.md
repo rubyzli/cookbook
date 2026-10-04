@@ -27,6 +27,7 @@ so entries are grouped by date.
 
 ### Changed
 
+- Recipe pages show when the recipe was added.
 - Fresher look: a brighter tomato accent with gradients on main buttons, selected filters and step
   numbers, a herb-green secondary colour, rounder cards with a thin border, a segmented navigation
   bar, soft focus rings on text fields and faint colour glows behind the page, in light and dark
@@ -40,6 +41,12 @@ so entries are grouped by date.
   `scripts/images-to-sql.sh` moves existing photos in and repoints their recipes.
 
 ### Added
+
+- Estimated calories, protein, carbohydrates and fat on each recipe page, per serving when the
+  servings are known. Claude estimates them from the ingredient lines in the background when a
+  recipe is saved (new `recipe_nutrition` table, migration V7), and again only when the ingredients
+  change. `GET`/`POST /api/recipes/{id}/nutrition` read and redo an estimate. Needs
+  `ANTHROPIC_API_KEY`; without it the nutrition box is hidden.
 
 **Photos**
 

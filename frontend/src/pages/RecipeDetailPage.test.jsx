@@ -204,4 +204,86 @@ describe('RecipeDetailPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t delete: Internal Server Error')
     expect(screen.getByTestId('location')).toHaveTextContent('/recipes/r1')
   })
+
+  it('shows when the recipe was added', async () => {
+    mockApi({ '/api/recipes/r1': applePie })
+
+    renderApp('/recipes/r1')
+
+    expect(await screen.findByText('Added October 3, 2026')).toBeInTheDocument()
+  })
+
+  it('shows the estimated nutrition per serving and for the whole recipe', async () => {
+    mockApi({
+      '/api/recipes/r1': applePie,
+      '/api/recipes/r1/nutrition': {
+        estimate: { kcal: 2400, proteinGrams: 30, carbsGrams: 300, fatGrams: 120 },
+        outdated: false,
+        enabled: true,
+      },
+    })
+
+    renderApp('/recipes/r1')
+
+    const nutrition = await screen.findByRole('region', { name: 'Nutrition' })
+    expect(within(nutrition).getByText('Per serving')).toBeInTheDocument()
+    expect(within(nutrition).getByText('300 kcal')).toBeInTheDocument()
+    expect(within(nutrition).getByText('4 g')).toBeInTheDocument()
+    expect(within(nutrition).getByText('38 g')).toBeInTheDocument()
+    expect(within(nutrition).getByText('15 g')).toBeInTheDocument()
+    expect(within(nutrition).getByText('Whole recipe: 2,400 kcal')).toBeInTheDocument()
+    expect(within(nutrition).queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('calculates the nutrition on request when there is none yet', async () => {
+    const fetchMock = mockApi({
+      '/api/recipes/r1': { ...applePie, servings: null },
+      '/api/recipes/r1/nutrition': { estimate: null, outdated: false, enabled: true },
+      'POST /api/recipes/r1/nutrition': {
+        estimate: { kcal: 2400, proteinGrams: 30, carbsGrams: 300, fatGrams: 120 },
+        outdated: false,
+        enabled: true,
+      },
+    })
+
+    renderApp('/recipes/r1')
+
+    const nutrition = await screen.findByRole('region', { name: 'Nutrition' })
+    expect(within(nutrition).getByText('Not calculated yet.')).toBeInTheDocument()
+    await userEvent.click(within(nutrition).getByRole('button', { name: 'Calculate' }))
+
+    expect(await within(nutrition).findByText('2,400 kcal')).toBeInTheDocument()
+    expect(within(nutrition).getByText('Whole recipe')).toBeInTheDocument()
+    expect(sentRequests(fetchMock)).toEqual([{ method: 'POST', url: '/api/recipes/r1/nutrition', body: undefined }])
+  })
+
+  it('offers to recalculate an outdated estimate', async () => {
+    mockApi({
+      '/api/recipes/r1': applePie,
+      '/api/recipes/r1/nutrition': {
+        estimate: { kcal: 2400, proteinGrams: 30, carbsGrams: 300, fatGrams: 120 },
+        outdated: true,
+        enabled: true,
+      },
+    })
+
+    renderApp('/recipes/r1')
+
+    const nutrition = await screen.findByRole('region', { name: 'Nutrition' })
+    expect(within(nutrition).getByText('The ingredients changed since this was calculated.')).toBeInTheDocument()
+    expect(within(nutrition).getByRole('button', { name: 'Recalculate' })).toBeInTheDocument()
+  })
+
+  it('leaves nutrition out when there is none and it cannot be calculated', async () => {
+    mockApi({
+      '/api/recipes/r1': applePie,
+      '/api/recipes/r1/nutrition': { estimate: null, outdated: false, enabled: false },
+    })
+
+    renderApp('/recipes/r1')
+
+    await screen.findByRole('heading', { level: 1, name: 'Apple Pie' })
+    await screen.findByText('Added October 3, 2026')
+    expect(screen.queryByRole('region', { name: 'Nutrition' })).not.toBeInTheDocument()
+  })
 })

@@ -70,6 +70,29 @@ export function useDeleteRecipe(id) {
   })
 }
 
+// Estimated calories and macros of the whole recipe. Under ['recipes'] so saving the recipe refreshes it.
+// Right after a save the estimate is made in the background, so a missing or outdated one is
+// checked again every few seconds for a short while.
+export function useNutrition(id) {
+  return useQuery({
+    queryKey: ['recipes', 'nutrition', id],
+    queryFn: () => apiGet(`/api/recipes/${id}/nutrition`),
+    refetchInterval: (query) => {
+      const data = query.state.data
+      const waiting = data?.enabled && (!data.estimate || data.outdated)
+      return waiting && query.state.dataUpdateCount < 10 ? 3000 : false
+    },
+  })
+}
+
+export function useEstimateNutrition(id) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => apiSend('POST', `/api/recipes/${id}/nutrition`),
+    onSuccess: (data) => queryClient.setQueryData(['recipes', 'nutrition', id], data),
+  })
+}
+
 // Create, rename and delete for the simple named lists. `kind` is 'categories' or 'ingredients'.
 // New names are stored as written in the site language. Renames and deletes also refresh recipes,
 // which show these names.

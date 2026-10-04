@@ -1605,6 +1605,7 @@ a.usage {
   margin-bottom: 1.25rem;
 }
 
+.added-on,
 .source-link {
   margin: 0;
   font-size: 0.92rem;
@@ -1613,4 +1614,65 @@ a.usage {
 
 .source-link a {
   font-weight: 600;
+}
+
+/* Nutrition on the recipe page */
+
+.nutrition {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.recipe-detail-body .nutrition h2 {
+  margin-bottom: 0;
+}
+
+.nutrition p {
+  margin: 0;
+}
+
+.nutrition-basis {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.nutrition-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr));
+  gap: 0.6rem;
+  margin: 0 0 0.25rem;
+}
+
+.nutrition-grid div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.nutrition-grid .nutrition-kcal {
+  background: var(--accent-soft);
+}
+
+.nutrition-grid dt {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.nutrition-grid dd {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+.nutrition .button {
+  align-self: flex-start;
 }
