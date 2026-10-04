@@ -1,6 +1,7 @@
 spring:
   application:
     name: cookbook
+
   datasource:
     url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
     username: ${DB_USER}
@@ -13,18 +14,16 @@ spring:
   flyway:
     enabled: true
 
-  # Photo uploads. The site shrinks large photos before uploading, so this only needs room for
-  # an original that couldn't be shrunk.
   servlet:
     multipart:
       max-file-size: 15MB
       max-request-size: 16MB
 
+server:
+  port: ${PORT:8080}
+
 cookbook:
-  # Folder whose files are served at /images/..., for recipe photos. Kept outside the project so
-  # photos aren't committed or packaged; set COOKBOOK_IMAGES_DIR to use another folder.
   images-dir: ${COOKBOOK_IMAGES_DIR:${user.home}/cookbook-images}
-  # DeepL API key for machine translation (https://www.deepl.com/pro-api). Without it, recipes can
-  # still be translated by hand; only the "translate automatically" buttons are hidden.
+
   deepl:
     api-key: ${DEEPL_API_KEY:}
