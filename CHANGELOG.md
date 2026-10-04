@@ -116,6 +116,10 @@ React Router)
   browser's "Failed to fetch", and "The backend isn't responding" when the Vite dev server can't
   reach Spring Boot. Network errors are now retried like server errors.
 - The category picker no longer says "No categories yet" next to a load error.
+- Photos could stay broken after a server fix: browsers had cached the app page that an older
+  backend returned for `/images/...` and kept reusing it. App pages and photos are now sent with
+  `Cache-Control: no-cache`, so browsers always check back. A photo that fails to load shows the
+  letter tile instead of a broken-image icon.
 
 ### Known limitations
 

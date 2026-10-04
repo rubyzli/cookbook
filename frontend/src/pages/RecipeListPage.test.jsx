@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import { mockApi, renderApp, requestedUrls } from '../test/utils.jsx'
@@ -142,5 +142,19 @@ describe('RecipeListPage', () => {
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent('Couldn’t load recipes.')
     expect(alert).toHaveTextContent('Internal Server Error')
+  })
+
+  it('shows the photo, and the letter tile instead when the photo fails to load', async () => {
+    mockApi({ '/api/recipes': [{ ...applePie, imageUrl: '/images/pie.jpg' }], '/api/categories': [] })
+    const { container } = renderApp('/')
+    await screen.findByRole('link', { name: /Apple Pie/ })
+
+    const image = container.querySelector('img')
+    expect(image).toHaveAttribute('src', '/images/pie.jpg')
+
+    fireEvent.error(image)
+
+    expect(container.querySelector('img')).toBeNull()
+    expect(container.querySelector('.image-placeholder')).toHaveTextContent('A')
   })
 })

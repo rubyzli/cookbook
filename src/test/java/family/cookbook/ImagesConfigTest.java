@@ -16,6 +16,7 @@ import java.nio.file.Path;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(FrontendController.class)
@@ -40,6 +41,7 @@ class ImagesConfigTest {
         mockMvc.perform(get("/images/lecso.jpg"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("image/jpeg"))
+                .andExpect(header().string("Cache-Control", "no-cache"))
                 .andExpect(content().bytes(new byte[] {1, 2, 3}));
     }
 

@@ -1,5 +1,8 @@
 package family.cookbook;
 
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -16,8 +19,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class FrontendController {
 
     // Spring only allows ** at the end of a pattern, so exclusions are decided by the first segment
-    @GetMapping("/{segment:^(?!api$|assets$|images$)[^.]*$}/**")
-    public String forwardToApp() {
+    @GetMapping({"/", "/{segment:^(?!api$|assets$|images$)[^.]*$}/**"})
+    public String forwardToApp(HttpServletResponse response) {
+        // Browsers must check back before reusing the page: it changes with every build, and a
+        // cached copy would otherwise keep being shown, even in place of an image that was once
+        // requested from a URL that returned this page
+        response.setHeader(HttpHeaders.CACHE_CONTROL, CacheControl.noCache().getHeaderValue());
         return "forward:/index.html";
     }
 }

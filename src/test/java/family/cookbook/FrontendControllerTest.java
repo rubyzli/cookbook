@@ -8,6 +8,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.forwardedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(FrontendController.class)
@@ -18,6 +19,7 @@ class FrontendControllerTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
+            "/",
             "/recipes",
             "/recipes/new",
             "/recipes/3758fcd2-43ff-4564-97ad-029db714069b",
@@ -27,7 +29,8 @@ class FrontendControllerTest {
     void forwardsAppRoutesToIndexHtml(String path) throws Exception {
         mockMvc.perform(get(path))
                 .andExpect(status().isOk())
-                .andExpect(forwardedUrl("/index.html"));
+                .andExpect(forwardedUrl("/index.html"))
+                .andExpect(header().string("Cache-Control", "no-cache"));
     }
 
     @ParameterizedTest
