@@ -27,6 +27,10 @@ so entries are grouped by date.
 
 ### Changed
 
+- Fresher look: a brighter tomato accent with gradients on main buttons, selected filters and step
+  numbers, a herb-green secondary colour, rounder cards with a thin border, a segmented navigation
+  bar, soft focus rings on text fields and faint colour glows behind the page, in light and dark
+  mode. The browser tab icon is now the cookbook's pot instead of Vite's logo.
 - Saving a recipe translates it into the other languages automatically, in the background, when a
   DeepL key is set. Missing translations and outdated machine translations are (re)made; reviewed
   ones are kept. A failed translation is logged and doesn't affect the save.
