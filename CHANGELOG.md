@@ -3,7 +3,26 @@
 All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). The project has no version numbers yet,
 so entries are grouped by date.
-can 
+
+## 2026-10-04
+
+### Changed
+
+- App pages (`/` and page URLs such as `/recipes/{id}`) and photos under `/images/...` are sent with
+  `Cache-Control: no-cache`, so browsers check with the server before reusing them.
+- A photo that fails to load (missing file, dead link) shows the letter tile instead of a
+  broken-image icon.
+
+### Fixed
+
+- Photos could stay broken after the server was fixed: browsers had cached the app page that an
+  older backend returned for `/images/...` and kept showing it as a broken image.
+
+### Upgrade notes
+
+- If photos still look broken in a browser that used the older version, clear its cache once
+  (Chrome: open DevTools, right-click the reload button, "Empty Cache and Hard Reload").
+
 ## 2026-10-03
 
 ### Added
@@ -116,10 +135,6 @@ React Router)
   browser's "Failed to fetch", and "The backend isn't responding" when the Vite dev server can't
   reach Spring Boot. Network errors are now retried like server errors.
 - The category picker no longer says "No categories yet" next to a load error.
-- Photos could stay broken after a server fix: browsers had cached the app page that an older
-  backend returned for `/images/...` and kept reusing it. App pages and photos are now sent with
-  `Cache-Control: no-cache`, so browsers always check back. A photo that fails to load shows the
-  letter tile instead of a broken-image icon.
 
 ### Known limitations
 
@@ -131,6 +146,8 @@ React Router)
 - Error details sent by the server for unexpected failures (5xx) are in English.
 - The German and Hungarian texts haven't been reviewed by a native speaker yet. They live in
   `frontend/src/i18n/messages/`.
+- There's no photo upload: a photo is added by copying the file into the images folder and
+  setting the recipe's photo URL to `/images/<file name>`.
 
 ### Upgrade notes
 
@@ -138,5 +155,7 @@ React Router)
   the schema isn't empty. With no data worth keeping, drop the old tables once:
   `DROP TABLE IF EXISTS recipe, category, ingredient, flyway_schema_history CASCADE;`
 - Set `POSTGRESQL_PW` in your shell (e.g. `~/.zshrc`) and in the IntelliJ run configuration.
+- Recipe photos live in `~/cookbook-images` (or `COOKBOOK_IMAGES_DIR`), outside git and the jar.
+  Back that folder up together with the database.
 - Running from IntelliJ skips the Maven plugins, so the website is only served if it was built with
   Maven since the last clean (`mvn generate-resources` is enough). The API works either way.
