@@ -18,6 +18,7 @@ public record RecipeRequest(
         @PositiveOrZero Integer prepTimeMinutes,
         @PositiveOrZero Integer cookTimeMinutes,
         String instructions,
+        String notes,
         @Size(max = 255) String imageUrl,
         List<@NotNull UUID> categoryIds,
         List<@NotNull @Valid RecipeIngredientRequest> ingredients) {

@@ -88,15 +88,61 @@ describe('New recipe', () => {
           prepTimeMinutes: null,
           cookTimeMinutes: 25,
           instructions: 'Make the dough.\nRoll and bake.',
+          notes: null,
           imageUrl: null,
           categoryIds: ['c2'],
           ingredients: [
-            { ingredientId: 'i1', amount: 500, unit: 'g' },
-            { ingredientId: 'i-new', amount: 2, unit: 'tbsp' },
+            { ingredientId: 'i1', amount: 500, unit: 'g', group: null },
+            { ingredientId: 'i-new', amount: 2, unit: 'tbsp', group: null },
           ],
         },
       },
     ])
+  })
+
+  it('saves group headings and notes', async () => {
+    const fetchMock = mockApi(
+      baseRoutes({
+        'POST /api/recipes': ({ body }) => ({ ...applePie, ...body, id: 'r-new', categories: [], ingredients: [] }),
+        '/api/recipes/r-new': applePie,
+      }),
+    )
+    renderApp('/recipes/new')
+    await screen.findByRole('checkbox', { name: 'Dessert' })
+
+    await userEvent.type(field('Name'), 'Pie')
+    await userEvent.type(field('Ingredient 1'), 'Flour')
+    await userEvent.click(screen.getByRole('button', { name: '+ Add group heading' }))
+    await userEvent.type(field('Group heading 1'), 'For the top')
+    await userEvent.click(screen.getByRole('button', { name: '+ Add ingredient' }))
+    await userEvent.type(field('Ingredient 2'), 'Butter')
+    await userEvent.type(field('Notes'), 'Serve warm.')
+    await userEvent.click(screen.getByRole('button', { name: 'Create recipe' }))
+
+    await waitFor(() => expect(sentRequests(fetchMock)).toHaveLength(1))
+    const [{ body }] = sentRequests(fetchMock)
+    expect(body.notes).toBe('Serve warm.')
+    expect(body.ingredients).toEqual([
+      { ingredientId: 'i1', amount: null, unit: null, group: null },
+      { ingredientId: 'i2', amount: null, unit: null, group: 'For the top' },
+    ])
+  })
+
+  it('moves and removes group headings', async () => {
+    mockApi(baseRoutes())
+    renderApp('/recipes/new')
+    await screen.findByRole('checkbox', { name: 'Dessert' })
+
+    await userEvent.click(screen.getByRole('button', { name: '+ Add group heading' }))
+    await userEvent.type(field('Group heading 1'), 'Dough')
+    await userEvent.click(screen.getByRole('button', { name: 'Move group heading 1 up' }))
+
+    const rows = within(screen.getByRole('group', { name: 'Ingredients' })).getAllByRole('listitem')
+    expect(within(rows[0]).getByRole('textbox')).toHaveValue('Dough')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Remove group heading 1' }))
+    expect(screen.queryByLabelText('Group heading 1')).not.toBeInTheDocument()
+    expect(field('Ingredient 1')).toBeInTheDocument()
   })
 
   it('shows validation errors without sending anything and focuses the first one', async () => {
@@ -263,6 +309,32 @@ describe('Edit recipe', () => {
     expect(field('Ingredient 2')).toHaveValue('Butter')
     expect(await screen.findByRole('checkbox', { name: 'Dessert' })).toBeChecked()
     expect(screen.getByRole('checkbox', { name: 'Baking' })).not.toBeChecked()
+  })
+
+  it('shows saved groups as headings and keeps them on save', async () => {
+    const grouped = {
+      ...applePie,
+      notes: 'Best the next day.',
+      ingredients: [
+        { ingredientId: 'i1', name: 'Flour', amount: 250, unit: 'g', group: 'For the dough' },
+        { ingredientId: 'i2', name: 'Butter', amount: 125, unit: 'g', group: 'For the top' },
+      ],
+    }
+    const fetchMock = mockApi(
+      baseRoutes({ '/api/recipes/r1': grouped, 'PUT /api/recipes/r1': ({ body }) => ({ ...grouped, ...body }) }),
+    )
+    renderApp('/recipes/r1/edit')
+    await screen.findByRole('heading', { level: 1, name: 'Edit Apple Pie' })
+
+    expect(field('Group heading 1')).toHaveValue('For the dough')
+    expect(field('Group heading 2')).toHaveValue('For the top')
+    expect(field('Notes')).toHaveValue('Best the next day.')
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    await waitFor(() => expect(sentRequests(fetchMock)).toHaveLength(1))
+    const [{ body }] = sentRequests(fetchMock)
+    expect(body.notes).toBe('Best the next day.')
+    expect(body.ingredients.map((line) => line.group)).toEqual(['For the dough', 'For the top'])
   })
 
   it('saves changes with PUT and returns to the recipe', async () => {

@@ -85,13 +85,16 @@ Pages:
 - `/` lists recipes, with a search box and category filter. Both are kept in the URL
   (`/?search=pie&categoryId=...`), so a filtered list can be bookmarked or shared.
 - `/recipes/{id}` shows a recipe with its times, categories, ingredients and numbered steps.
-  Each line of a recipe's instructions is shown as one step. Edit and Delete buttons are at the top;
+  Each line of a recipe's instructions is shown as one step. Ingredients with a group are listed
+  under its heading (e.g. "For the dough"), and notes appear in their own section under the steps. Edit and Delete buttons are at the top;
   Delete asks for confirmation first.
 - `/manage` lists categories and ingredients side by side, with how many recipes use each. Both
   can be added, filtered and renamed. Deleting a category removes it from its recipes (the
   confirmation says how many); an ingredient can't be deleted while a recipe uses it.
 - `/recipes/new` and `/recipes/{id}/edit` are the recipe form:
   - Categories are toggled on and off, and a new one can be added right in the form.
+  - Group headings ("+ Add group heading") split the ingredient list; lines belong to the heading
+    above them, and a blank heading ends a group. Notes have their own field under the steps.
   - Ingredient names are typed with suggestions from existing ingredients. Names that don't exist
     yet are created when the recipe is saved. Lines can be reordered, and amount and unit are optional.
   - The form checks the same rules as the backend before sending, and shows any errors the backend
@@ -140,17 +143,20 @@ curl -X POST http://localhost:8080/api/recipes \
         "prepTimeMinutes": 30,
         "cookTimeMinutes": 45,
         "instructions": "Mix. Bake.",
+        "notes": "Use tart apples.",
         "imageUrl": null,
         "categoryIds": ["<category id>"],
         "ingredients": [
-          {"ingredientId": "<flour id>", "amount": 250, "unit": "g"},
+          {"ingredientId": "<flour id>", "amount": 250, "unit": "g", "group": "For the dough"},
           {"ingredientId": "<salt id>"}
         ]
       }'
 ```
 
-Ingredient lines keep the order they're sent in. `amount` and `unit` are optional, and the same
-ingredient can appear on more than one line.
+Ingredient lines keep the order they're sent in. `amount`, `unit` and `group` are optional, and the
+same ingredient can appear on more than one line. `group` (up to 100 characters) is the heading a
+line is listed under; consecutive lines with the same group are shown together. `notes` holds tips
+and variations, shown separately from the numbered steps.
 
 ### Categories and ingredients
 

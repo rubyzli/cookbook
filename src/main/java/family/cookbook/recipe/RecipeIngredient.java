@@ -31,15 +31,19 @@ public class RecipeIngredient {
     private String unit;
     @Column(nullable = false)
     private int position;
+    @Column(name = "group_name", length = 100)
+    private String group;
 
     protected RecipeIngredient() {
     }
 
-    public RecipeIngredient(Recipe recipe, Ingredient ingredient, BigDecimal amount, String unit, int position) {
+    public RecipeIngredient(Recipe recipe, Ingredient ingredient, BigDecimal amount, String unit, String group,
+                            int position) {
         this.recipe = recipe;
         this.ingredient = ingredient;
         this.amount = amount;
         this.unit = unit;
+        this.group = group;
         this.position = position;
     }
 
@@ -61,6 +65,10 @@ public class RecipeIngredient {
 
     public String getUnit() {
         return unit;
+    }
+
+    public String getGroup() {
+        return group;
     }
 
     public int getPosition() {

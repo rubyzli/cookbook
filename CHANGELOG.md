@@ -6,6 +6,16 @@ so entries are grouped by date.
 
 ## 2026-10-04
 
+### Added
+
+- **Notes** on recipes: tips, variations and footnotes in their own field, shown under the steps as
+  plain paragraphs instead of being numbered as steps.
+- **Ingredient groups:** each ingredient line can belong to a group such as "A tésztához", shown as
+  a subheading in the list. In the form, "+ Add group heading" inserts a heading row; lines belong
+  to the heading above them and a blank heading ends a group.
+- `V3__add_recipe_notes_and_ingredient_groups.sql` adds `recipe.notes` and
+  `recipe_ingredient.group_name`. The API has `notes` on recipes and `group` on ingredient lines.
+
 ### Changed
 
 - App pages (`/` and page URLs such as `/recipes/{id}`) and photos under `/images/...` are sent with
@@ -20,6 +30,8 @@ so entries are grouped by date.
 
 ### Upgrade notes
 
+- Restart the backend after updating: the database already has the new columns, and an older
+  backend would drop ingredient groups whenever a recipe is saved through it.
 - If photos still look broken in a browser that used the older version, clear its cache once
   (Chrome: open DevTools, right-click the reload button, "Empty Cache and Hard Reload").
 

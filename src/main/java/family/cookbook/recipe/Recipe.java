@@ -38,6 +38,8 @@ public class Recipe {
     private Integer cookTimeMinutes;
     @Column(columnDefinition = "text")
     private String instructions;
+    @Column(columnDefinition = "text")
+    private String notes;
     private String imageUrl;
     private String createdBy;
     @CreationTimestamp
@@ -113,6 +115,14 @@ public class Recipe {
 
     public void setInstructions(String instructions) {
         this.instructions = instructions;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 
     public String getImageUrl() {

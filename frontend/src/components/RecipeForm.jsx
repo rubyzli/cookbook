@@ -157,6 +157,11 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
             />
           )}
         </Field>
+        <Field label={t('form.notes')} hint={t('form.notesHint')} error={errors.notes}>
+          {(props) => (
+            <textarea {...props} rows={4} value={values.notes} onChange={(e) => set('notes', e.target.value)} />
+          )}
+        </Field>
       </fieldset>
 
       <div className="form-actions">

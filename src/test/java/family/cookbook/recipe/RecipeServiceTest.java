@@ -103,9 +103,11 @@ class RecipeServiceTest {
         Category baking = category("Baking");
         Ingredient flour = ingredient("Flour");
         Ingredient butter = ingredient("Butter");
-        RecipeRequest request = new RecipeRequest("Apple Pie", "Grandma's", 8, 30, 45, "Mix. Bake.", null,
+        RecipeRequest request = new RecipeRequest("Apple Pie", "Grandma's", 8, 30, 45, "Mix. Bake.",
+                "Use tart apples.", null,
                 List.of(dessert.getId(), baking.getId()),
-                List.of(line(flour, "250", "g"), line(butter, "125", "g"), line(butter, "1", "tbsp")));
+                List.of(line(flour, "250", "g", "For the dough"), line(butter, "125", "g", "For the dough"),
+                        line(butter, "1", "tbsp", "For the top")));
         when(recipeRepository.existsByNameIgnoreCase("Apple Pie")).thenReturn(false);
         when(categoryRepository.findAllById(Set.of(dessert.getId(), baking.getId()))).thenReturn(List.of(dessert, baking));
         when(ingredientRepository.findAllById(Set.of(flour.getId(), butter.getId()))).thenReturn(List.of(flour, butter));
@@ -119,11 +121,12 @@ class RecipeServiceTest {
         assertThat(created.prepTimeMinutes()).isEqualTo(30);
         assertThat(created.cookTimeMinutes()).isEqualTo(45);
         assertThat(created.instructions()).isEqualTo("Mix. Bake.");
+        assertThat(created.notes()).isEqualTo("Use tart apples.");
         assertThat(created.categories()).extracting(CategoryRef::name).containsExactly("Baking", "Dessert");
         assertThat(created.ingredients()).containsExactly(
-                new RecipeIngredientResponse(flour.getId(), "Flour", new BigDecimal("250"), "g"),
-                new RecipeIngredientResponse(butter.getId(), "Butter", new BigDecimal("125"), "g"),
-                new RecipeIngredientResponse(butter.getId(), "Butter", new BigDecimal("1"), "tbsp"));
+                new RecipeIngredientResponse(flour.getId(), "Flour", new BigDecimal("250"), "g", "For the dough"),
+                new RecipeIngredientResponse(butter.getId(), "Butter", new BigDecimal("125"), "g", "For the dough"),
+                new RecipeIngredientResponse(butter.getId(), "Butter", new BigDecimal("1"), "tbsp", "For the top"));
     }
 
     @Test
@@ -172,7 +175,7 @@ class RecipeServiceTest {
         when(ingredientRepository.findAllById(anyCollection())).thenReturn(List.of());
 
         RecipeRequest request = request("Pie", List.of(),
-                List.of(new RecipeIngredientRequest(unknown, null, null)));
+                List.of(new RecipeIngredientRequest(unknown, null, null, null)));
 
         assertThatThrownBy(() -> recipeService.createRecipe(request))
                 .isInstanceOfSatisfying(ResponseStatusException.class, ex -> {
@@ -191,14 +194,14 @@ class RecipeServiceTest {
         Recipe recipe = recipe("Pie");
         recipe.setServings(4);
         recipe.replaceCategories(List.of(dessert));
-        recipe.replaceIngredients(List.of(new RecipeIngredient(recipe, flour, BigDecimal.ONE, "cup", 0)));
+        recipe.replaceIngredients(List.of(new RecipeIngredient(recipe, flour, BigDecimal.ONE, "cup", "Old group", 0)));
         when(recipeRepository.findWithDetailsById(recipe.getId())).thenReturn(Optional.of(recipe));
         when(recipeRepository.existsByNameIgnoreCaseAndIdNot("Apple Pie", recipe.getId())).thenReturn(false);
         when(categoryRepository.findAllById(Set.of(italian.getId()))).thenReturn(List.of(italian));
         when(ingredientRepository.findAllById(Set.of(sugar.getId()))).thenReturn(List.of(sugar));
         when(recipeRepository.saveAndFlush(recipe)).thenReturn(recipe);
 
-        RecipeRequest request = new RecipeRequest("Apple Pie", null, null, null, null, null, null,
+        RecipeRequest request = new RecipeRequest("Apple Pie", null, null, null, null, null, null, null,
                 List.of(italian.getId()), List.of(line(sugar, "100", "g")));
         Optional<RecipeDetail> updated = recipeService.updateRecipe(recipe.getId(), request);
 
@@ -207,6 +210,7 @@ class RecipeServiceTest {
             assertThat(detail.servings()).isNull();
             assertThat(detail.categories()).extracting(CategoryRef::name).containsExactly("Italian");
             assertThat(detail.ingredients()).extracting(RecipeIngredientResponse::name).containsExactly("Sugar");
+            assertThat(detail.ingredients()).extracting(RecipeIngredientResponse::group).containsExactly((String) null);
         });
     }
 
@@ -242,11 +246,15 @@ class RecipeServiceTest {
     }
 
     private static RecipeRequest request(String name, List<UUID> categoryIds, List<RecipeIngredientRequest> ingredients) {
-        return new RecipeRequest(name, null, null, null, null, null, null, categoryIds, ingredients);
+        return new RecipeRequest(name, null, null, null, null, null, null, null, categoryIds, ingredients);
     }
 
     private static RecipeIngredientRequest line(Ingredient ingredient, String amount, String unit) {
-        return new RecipeIngredientRequest(ingredient.getId(), new BigDecimal(amount), unit);
+        return line(ingredient, amount, unit, null);
+    }
+
+    private static RecipeIngredientRequest line(Ingredient ingredient, String amount, String unit, String group) {
+        return new RecipeIngredientRequest(ingredient.getId(), new BigDecimal(amount), unit, group);
     }
 
     private static Recipe recipe(String name) {

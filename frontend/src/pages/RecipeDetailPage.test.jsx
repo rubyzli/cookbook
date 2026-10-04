@@ -75,6 +75,50 @@ describe('RecipeDetailPage', () => {
     expect(container.querySelector('.image-placeholder, img')).toBeNull()
   })
 
+  it('shows grouped ingredients under their headings', async () => {
+    mockApi({
+      '/api/recipes/r1': {
+        ...applePie,
+        ingredients: [
+          { ingredientId: 'i3', name: 'Salt', amount: null, unit: 'pinch', group: null },
+          { ingredientId: 'i1', name: 'Flour', amount: 250, unit: 'g', group: 'For the dough' },
+          { ingredientId: 'i2', name: 'Butter', amount: 125, unit: 'g', group: 'For the dough' },
+          { ingredientId: 'i2', name: 'Butter', amount: 1, unit: 'tbsp', group: 'For the top' },
+        ],
+      },
+    })
+
+    renderApp('/recipes/r1')
+
+    const region = await screen.findByRole('region', { name: 'Ingredients' })
+    expect(within(region).getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
+      'For the dough',
+      'For the top',
+    ])
+    const lists = within(region).getAllByRole('list')
+    expect(lists.map((list) => within(list).getAllByRole('listitem').map((item) => item.textContent))).toEqual([
+      ['pinch Salt'],
+      ['250 g Flour', '125 g Butter'],
+      ['1 tbsp Butter'],
+    ])
+  })
+
+  it('shows notes as unnumbered paragraphs, and no notes section without them', async () => {
+    mockApi({ '/api/recipes/r1': { ...applePie, notes: 'Use tart apples.\n\nBest the next day.' } })
+    const { unmount } = renderApp('/recipes/r1')
+
+    const notes = await screen.findByRole('region', { name: 'Notes' })
+    expect(within(notes).queryByRole('list')).not.toBeInTheDocument()
+    expect(within(notes).getByText('Use tart apples.')).toBeInTheDocument()
+    expect(within(notes).getByText('Best the next day.')).toBeInTheDocument()
+    unmount()
+
+    mockApi({ '/api/recipes/r1': { ...applePie, notes: null } })
+    renderApp('/recipes/r1')
+    await screen.findByRole('heading', { level: 1, name: 'Apple Pie' })
+    expect(screen.queryByRole('region', { name: 'Notes' })).not.toBeInTheDocument()
+  })
+
   it('leaves out the total when only one time is known', async () => {
     mockApi({ '/api/recipes/r1': { ...applePie, prepTimeMinutes: null } })
 

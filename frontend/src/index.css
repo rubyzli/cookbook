@@ -420,6 +420,34 @@ a.chip:hover {
   margin: 0;
 }
 
+.recipe-detail-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  min-width: 0;
+}
+
+.recipe-notes p {
+  margin: 0 0 0.6rem;
+}
+
+.recipe-notes p:last-child {
+  margin-bottom: 0;
+}
+
+.ingredient-group-block + .ingredient-group-block {
+  margin-top: 0.9rem;
+}
+
+.ingredient-group-heading {
+  margin: 0 0 0.2rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
 .steps {
   margin: 0;
   padding-left: 1.4rem;
@@ -697,7 +725,8 @@ a.chip:hover {
 
 .ingredient-row {
   display: grid;
-  grid-template-columns: 6rem 6rem minmax(0, 1fr) auto;
+  /* Wide enough for Hungarian units such as "púpozott kanál" */
+  grid-template-columns: 5rem 10.5rem minmax(0, 1fr) auto;
   gap: 0.5rem;
   align-items: center;
 }
@@ -709,6 +738,24 @@ a.chip:hover {
 
 .row-error {
   grid-column: 1 / -1;
+}
+
+.heading-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-top: 0.4rem;
+}
+
+/* .recipe-form prefix: needed to win over the general .recipe-form input rule */
+.recipe-form .ingredient-group {
+  font-weight: 700;
+  background: var(--accent-soft);
+  border-color: transparent;
+}
+
+.row-adders {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .form-section > .button {
@@ -730,6 +777,10 @@ a.chip:hover {
   .row-actions {
     grid-column: 1 / -1;
     justify-content: flex-end;
+  }
+
+  .heading-row {
+    grid-template-columns: 1fr;
   }
 }
 

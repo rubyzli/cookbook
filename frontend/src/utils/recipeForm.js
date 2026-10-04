@@ -1,10 +1,20 @@
 // Form values are all strings (what the inputs hold); they become numbers and nulls only in toRequest.
-// Each ingredient line has a stable `key` so React rows and error messages follow it when lines move.
+// `lines` holds the ingredient rows: ingredient lines, and group headings ({ kind: 'heading' }) that
+// the lines below them belong to, up to the next heading. A blank heading ends a group.
+// Each row has a stable `key` so React rows and error messages follow it when rows move.
 
 let nextLineKey = 0
 
 export function newLine(values = {}) {
   return { key: `line-${nextLineKey++}`, name: '', amount: '', unit: '', ...values }
+}
+
+export function newHeading(name = '') {
+  return { key: `heading-${nextLineKey++}`, kind: 'heading', name }
+}
+
+export function isHeading(row) {
+  return row.kind === 'heading'
 }
 
 export function emptyForm() {
@@ -16,6 +26,7 @@ export function emptyForm() {
     cookTimeMinutes: '',
     imageUrl: '',
     instructions: '',
+    notes: '',
     categoryIds: [],
     lines: [newLine()],
   }
@@ -30,14 +41,25 @@ export function formFromRecipe(recipe) {
     cookTimeMinutes: toText(recipe.cookTimeMinutes),
     imageUrl: recipe.imageUrl ?? '',
     instructions: recipe.instructions ?? '',
+    notes: recipe.notes ?? '',
     categoryIds: recipe.categories.map((category) => category.id),
-    lines:
-      recipe.ingredients.length > 0
-        ? recipe.ingredients.map((line) =>
-            newLine({ name: line.name, amount: toText(line.amount), unit: line.unit ?? '' }),
-          )
-        : [newLine()],
+    lines: recipe.ingredients.length > 0 ? rowsFromIngredients(recipe.ingredients) : [newLine()],
   }
+}
+
+// A heading row wherever the group changes; a blank heading where lines go back to having none
+function rowsFromIngredients(ingredients) {
+  const rows = []
+  let group = null
+  for (const line of ingredients) {
+    const lineGroup = line.group ?? null
+    if (lineGroup !== group) {
+      rows.push(newHeading(lineGroup ?? ''))
+      group = lineGroup
+    }
+    rows.push(newLine({ name: line.name, amount: toText(line.amount), unit: line.unit ?? '' }))
+  }
+  return rows
 }
 
 export function normalizeName(name) {
@@ -48,9 +70,10 @@ export function lineField(line, field) {
   return `lines.${line.key}.${field}`
 }
 
-// Lines the user left completely empty are ignored rather than treated as errors
-export function filledLines(lines) {
-  return lines.filter((line) => line.name.trim() || line.amount.trim() || line.unit.trim())
+// Ingredient lines (not headings) with something in them; completely empty lines are ignored
+// rather than treated as errors
+export function filledLines(rows) {
+  return rows.filter((row) => !isHeading(row) && (row.name.trim() || row.amount.trim() || row.unit.trim()))
 }
 
 const WHOLE_NUMBER = /^\d{1,6}$/
@@ -79,6 +102,9 @@ export function validateForm(values, t) {
     }
     checkLength(errors, t, lineField(line, 'unit'), line.unit, 50)
   }
+  for (const heading of values.lines.filter(isHeading)) {
+    checkLength(errors, t, lineField(heading, 'name'), heading.name, 100)
+  }
   return errors
 }
 
@@ -99,7 +125,12 @@ function checkWholeNumber(errors, t, field, text, min) {
 // Also returns the key of each submitted line, in order, so server errors like
 // "ingredients[2].amount" can be traced back to the right row.
 export function toRequest(values, ingredientIds) {
-  const lines = filledLines(values.lines)
+  const lines = []
+  let group = null
+  for (const row of values.lines) {
+    if (isHeading(row)) group = blankToNull(row.name)
+    else if (filledLines([row]).length > 0) lines.push({ ...row, group })
+  }
   return {
     request: {
       name: values.name.trim(),
@@ -108,12 +139,14 @@ export function toRequest(values, ingredientIds) {
       prepTimeMinutes: toNumber(values.prepTimeMinutes),
       cookTimeMinutes: toNumber(values.cookTimeMinutes),
       instructions: blankToNull(values.instructions),
+      notes: blankToNull(values.notes),
       imageUrl: blankToNull(values.imageUrl),
       categoryIds: values.categoryIds,
       ingredients: lines.map((line) => ({
         ingredientId: ingredientIds.get(normalizeName(line.name)),
         amount: toNumber(line.amount.replace(',', '.')),
         unit: blankToNull(line.unit),
+        group: line.group,
       })),
     },
     lineKeys: lines.map((line) => line.key),

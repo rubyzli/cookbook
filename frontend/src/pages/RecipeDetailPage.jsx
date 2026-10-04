@@ -67,22 +67,31 @@ function RecipeDetailContent({ query }) {
           {recipe.ingredients.length === 0 ? (
             <p className="hint">{t('detail.noIngredients')}</p>
           ) : (
-            <ul className="ingredient-list">
-              {recipe.ingredients.map((line, index) => (
-                // Index as key: the same ingredient can appear on several lines
-                <li key={index}>
-                  <span className="amount">{formatAmount(line.amount, line.unit, language)}</span>{' '}
-                  {line.name}
-                </li>
-              ))}
-            </ul>
+            groupConsecutive(recipe.ingredients).map((section, sectionIndex) => (
+              // Index as key: the same group name can come back later in the list
+              <div key={sectionIndex} className="ingredient-group-block">
+                {section.group && <h3 className="ingredient-group-heading">{section.group}</h3>}
+                <ul className="ingredient-list">
+                  {section.lines.map((line, index) => (
+                    // Index as key: the same ingredient can appear on several lines
+                    <li key={index}>
+                      <span className="amount">{formatAmount(line.amount, line.unit, language)}</span>{' '}
+                      {line.name}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
           )}
         </section>
 
-        <section aria-labelledby="instructions-heading">
-          <h2 id="instructions-heading">{t('detail.instructions')}</h2>
-          <Instructions text={recipe.instructions} />
-        </section>
+        <div className="recipe-detail-column">
+          <section aria-labelledby="instructions-heading">
+            <h2 id="instructions-heading">{t('detail.instructions')}</h2>
+            <Instructions text={recipe.instructions} />
+          </section>
+          <Notes text={recipe.notes} />
+        </div>
       </div>
     </article>
   )
@@ -131,6 +140,33 @@ function RecipeActions({ recipe }) {
         {t('detail.delete')}
       </button>
     </div>
+  )
+}
+
+// Consecutive lines with the same group become one section: [{ group, lines }]
+function groupConsecutive(lines) {
+  const sections = []
+  for (const line of lines) {
+    const group = line.group ?? null
+    const last = sections.at(-1)
+    if (last && last.group === group) last.lines.push(line)
+    else sections.push({ group, lines: [line] })
+  }
+  return sections
+}
+
+// Each non-empty line is its own paragraph; nothing is shown without notes
+function Notes({ text }) {
+  const { t } = useI18n()
+  const paragraphs = (text ?? '').split('\n').map((line) => line.trim()).filter(Boolean)
+  if (paragraphs.length === 0) return null
+  return (
+    <section aria-labelledby="notes-heading" className="recipe-notes">
+      <h2 id="notes-heading">{t('detail.notes')}</h2>
+      {paragraphs.map((paragraph, index) => (
+        <p key={index}>{paragraph}</p>
+      ))}
+    </section>
   )
 }
 

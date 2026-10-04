@@ -3,7 +3,9 @@ import {
   emptyForm,
   formErrorsFromServer,
   formFromRecipe,
+  isHeading,
   lineField,
+  newHeading,
   newLine,
   toRequest,
   validateForm,
@@ -136,14 +138,93 @@ describe('toRequest', () => {
       prepTimeMinutes: 0,
       cookTimeMinutes: null,
       instructions: 'Mix.\nBake.',
+      notes: null,
       imageUrl: null,
       categoryIds: ['c1'],
       ingredients: [
-        { ingredientId: 'i-flour', amount: 1.5, unit: 'cups' },
-        { ingredientId: 'i-salt', amount: null, unit: null },
+        { ingredientId: 'i-flour', amount: 1.5, unit: 'cups', group: null },
+        { ingredientId: 'i-salt', amount: null, unit: null, group: null },
       ],
     })
     expect(lineKeys).toEqual([flour.key, salt.key])
+  })
+
+  it('gives lines the group of the heading above them; a blank heading ends the group', () => {
+    const ids = new Map([['flour', 'i1'], ['butter', 'i2'], ['salt', 'i3'], ['sugar', 'i4']])
+    const values = form({
+      notes: '  Tip one.\nTip two.  ',
+      lines: [
+        newLine({ name: 'Salt' }),
+        newHeading(' For the dough '),
+        newLine({ name: 'Flour' }),
+        newLine(),
+        newLine({ name: 'Butter' }),
+        newHeading('For the top'),
+        newHeading(''),
+        newLine({ name: 'Sugar' }),
+      ],
+    })
+
+    const { request } = toRequest(values, ids)
+
+    expect(request.notes).toBe('Tip one.\nTip two.')
+    expect(request.ingredients.map((line) => [line.ingredientId, line.group])).toEqual([
+      ['i3', null],
+      ['i1', 'For the dough'],
+      ['i2', 'For the dough'],
+      ['i4', null],
+    ])
+  })
+})
+
+describe('headings in the form', () => {
+  it('formFromRecipe adds a heading wherever the group changes', () => {
+    const values = formFromRecipe({
+      name: 'Pie',
+      notes: 'Tip.',
+      categories: [],
+      ingredients: [
+        { name: 'Flour', amount: 250, unit: 'g', group: 'For the dough' },
+        { name: 'Butter', amount: 100, unit: 'g', group: 'For the dough' },
+        { name: 'Sugar', amount: null, unit: null, group: 'For the top' },
+        { name: 'Salt', amount: null, unit: null, group: null },
+      ],
+    })
+
+    expect(values.notes).toBe('Tip.')
+    expect(values.lines.map((row) => (isHeading(row) ? `# ${row.name}` : row.name))).toEqual([
+      '# For the dough',
+      'Flour',
+      'Butter',
+      '# For the top',
+      'Sugar',
+      '# ',
+      'Salt',
+    ])
+  })
+
+  it('round-trips through toRequest', () => {
+    const recipe = {
+      name: 'Pie',
+      categories: [],
+      ingredients: [
+        { name: 'Salt', amount: null, unit: null, group: null },
+        { name: 'Flour', amount: 250, unit: 'g', group: 'For the dough' },
+      ],
+    }
+    const ids = new Map([['salt', 'i1'], ['flour', 'i2']])
+
+    const { request } = toRequest(formFromRecipe(recipe), ids)
+
+    expect(request.ingredients.map((line) => line.group)).toEqual([null, 'For the dough'])
+  })
+
+  it('limits heading length to the database column', () => {
+    const heading = newHeading('x'.repeat(101))
+
+    expect(validateForm(form({ lines: [heading, newLine({ name: 'Flour' })] }), en)).toEqual({
+      [lineField(heading, 'name')]: 'Keep this under 100 characters.',
+    })
   })
 })
 

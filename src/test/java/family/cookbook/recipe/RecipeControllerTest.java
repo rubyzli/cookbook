@@ -86,6 +86,8 @@ class RecipeControllerTest {
                 .andExpect(jsonPath("$.ingredients[0].ingredientId").value(INGREDIENT_ID.toString()))
                 .andExpect(jsonPath("$.ingredients[0].amount").value(500))
                 .andExpect(jsonPath("$.ingredients[0].unit").value("g"))
+                .andExpect(jsonPath("$.ingredients[0].group").value("For the layers"))
+                .andExpect(jsonPath("$.notes").value("Rest 10 minutes before cutting."))
                 .andExpect(jsonPath("$.createdAt").value("2026-10-03T12:00:00Z"));
     }
 
@@ -105,8 +107,9 @@ class RecipeControllerTest {
 
     @Test
     void createRecipeReturns201AndPassesFullRequest() throws Exception {
-        RecipeRequest expected = new RecipeRequest("Lasagna", "Classic", 6, 20, 60, "Layer and bake.", null,
-                List.of(CATEGORY_ID), List.of(new RecipeIngredientRequest(INGREDIENT_ID, new BigDecimal("500"), "g")));
+        RecipeRequest expected = new RecipeRequest("Lasagna", "Classic", 6, 20, 60, "Layer and bake.",
+                "Rest 10 minutes before cutting.", null, List.of(CATEGORY_ID),
+                List.of(new RecipeIngredientRequest(INGREDIENT_ID, new BigDecimal("500"), "g", "For the layers")));
         when(recipeService.createRecipe(expected)).thenReturn(detail("Lasagna"));
 
         mockMvc.perform(post("/api/recipes")
@@ -119,8 +122,9 @@ class RecipeControllerTest {
                                   "prepTimeMinutes": 20,
                                   "cookTimeMinutes": 60,
                                   "instructions": "Layer and bake.",
+                                  "notes": "Rest 10 minutes before cutting.",
                                   "categoryIds": ["%s"],
-                                  "ingredients": [{"ingredientId": "%s", "amount": 500, "unit": "g"}]
+                                  "ingredients": [{"ingredientId": "%s", "amount": 500, "unit": "g", "group": " For the layers "}]
                                 }
                                 """.formatted(CATEGORY_ID, INGREDIENT_ID)))
                 .andExpect(status().isCreated())
@@ -129,7 +133,7 @@ class RecipeControllerTest {
 
     @Test
     void createRecipeTreatsMissingListsAsEmpty() throws Exception {
-        RecipeRequest expected = new RecipeRequest("Lasagna", null, null, null, null, null, null, List.of(), List.of());
+        RecipeRequest expected = new RecipeRequest("Lasagna", null, null, null, null, null, null, null, List.of(), List.of());
         when(recipeService.createRecipe(expected)).thenReturn(detail("Lasagna"));
 
         mockMvc.perform(post("/api/recipes")
@@ -158,6 +162,31 @@ class RecipeControllerTest {
                 .andExpect(jsonPath("$.errors['ingredients[0].ingredientId']").exists())
                 .andExpect(jsonPath("$.errors['ingredients[0].amount']").exists())
                 .andExpect(jsonPath("$.errors['ingredients[0].unit']").exists());
+
+        verify(recipeService, never()).createRecipe(any());
+    }
+
+    @Test
+    void createRecipeTreatsBlankGroupAsNone() throws Exception {
+        RecipeRequest expected = new RecipeRequest("Lasagna", null, null, null, null, null, null, null, List.of(),
+                List.of(new RecipeIngredientRequest(INGREDIENT_ID, null, null, null)));
+        when(recipeService.createRecipe(expected)).thenReturn(detail("Lasagna"));
+
+        mockMvc.perform(post("/api/recipes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Lasagna\", \"ingredients\": [{\"ingredientId\": \"%s\", \"group\": \"  \"}]}"
+                                .formatted(INGREDIENT_ID)))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    void createRecipeReturns400ForTooLongGroup() throws Exception {
+        mockMvc.perform(post("/api/recipes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"Lasagna\", \"ingredients\": [{\"ingredientId\": \"%s\", \"group\": \"%s\"}]}"
+                                .formatted(INGREDIENT_ID, "x".repeat(101))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors['ingredients[0].group']").exists());
 
         verify(recipeService, never()).createRecipe(any());
     }
@@ -246,9 +275,10 @@ class RecipeControllerTest {
     }
 
     private static RecipeDetail detail(String name) {
-        return new RecipeDetail(UUID.randomUUID(), name, "Classic", 6, 20, 60, "Layer and bake.", null, null,
-                Instant.parse("2026-10-03T12:00:00Z"),
+        return new RecipeDetail(UUID.randomUUID(), name, "Classic", 6, 20, 60, "Layer and bake.",
+                "Rest 10 minutes before cutting.", null, null, Instant.parse("2026-10-03T12:00:00Z"),
                 List.of(new CategoryRef(CATEGORY_ID, "Italian")),
-                List.of(new RecipeIngredientResponse(INGREDIENT_ID, "Pasta sheets", new BigDecimal("500"), "g")));
+                List.of(new RecipeIngredientResponse(INGREDIENT_ID, "Pasta sheets", new BigDecimal("500"), "g",
+                        "For the layers")));
     }
 }

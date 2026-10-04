@@ -88,6 +88,7 @@ public class RecipeService {
         recipe.setPrepTimeMinutes(request.prepTimeMinutes());
         recipe.setCookTimeMinutes(request.cookTimeMinutes());
         recipe.setInstructions(request.instructions());
+        recipe.setNotes(request.notes());
         recipe.setImageUrl(request.imageUrl());
         recipe.replaceCategories(findCategories(request.categoryIds()));
         recipe.replaceIngredients(buildIngredientLines(recipe, request.ingredients()));
@@ -111,7 +112,7 @@ public class RecipeService {
         for (int position = 0; position < lines.size(); position++) {
             RecipeIngredientRequest line = lines.get(position);
             result.add(new RecipeIngredient(recipe, found.get(line.ingredientId()),
-                    line.amount(), line.unit(), position));
+                    line.amount(), line.unit(), line.group(), position));
         }
         return result;
     }
