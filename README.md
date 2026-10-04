@@ -70,9 +70,12 @@ Every recipe, ingredient and category is stored in the language it was written i
 or Hungarian), and can have a translation into each of the others. Visitors see the version in the
 site language when one exists, and otherwise the original, marked with its language.
 
-- **Automatically:** with a [DeepL API](https://www.deepl.com/pro-api) key, "Translate automatically"
-  on a recipe page drafts a translation, including the recipe's ingredient and category names that
-  have none yet. The free plan allows 500,000+ characters a month; all recipes so far are about
+- **Automatically:** with a [DeepL API](https://www.deepl.com/pro-api) key, saving a recipe
+  machine-translates it into the other languages in the background, including its ingredient and
+  category names that have none yet. A language is redone after an edit only if its translation is
+  a machine one; reviewed translations are never replaced, just marked outdated. If DeepL fails,
+  the recipe is still saved and the failure is logged. "Translate automatically" on a recipe page
+  does the same for one language on demand. The free plan allows 500,000+ characters a month; all recipes so far are about
   13,000. Set the key as `DEEPL_API_KEY` for the backend (shell, IntelliJ run configuration or
   server). It's only used by the server, never sent to the browser. Without a key, everything works
   except the automatic buttons.

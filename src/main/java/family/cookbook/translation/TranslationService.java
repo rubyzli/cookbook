@@ -113,6 +113,28 @@ public class TranslationService {
         return Optional.of(RecipeTranslationResponse.from(translation, SourceText.hash(recipe)));
     }
 
+    // The languages to machine-translate a recipe into after it was saved: those with no translation
+    // yet, or a machine translation of text that has changed since. Reviewed translations are left
+    // alone even when outdated, so nobody's corrections are overwritten.
+    @Transactional(readOnly = true)
+    public List<String> languagesToTranslateAutomatically(UUID recipeId) {
+        if (!translator.isEnabled()) return List.of();
+        return recipeRepository.findWithDetailsById(recipeId).map(recipe -> {
+            String hash = SourceText.hash(recipe);
+            Map<String, RecipeTranslation> existing = recipeTranslations.findByIdOwnerIdOrderByIdLanguage(recipeId)
+                    .stream().collect(Collectors.toMap(RecipeTranslation::getLanguage, Function.identity()));
+            return Languages.SUPPORTED.stream()
+                    .filter(language -> !language.equals(recipe.getLanguage()))
+                    .filter(language -> {
+                        RecipeTranslation translation = existing.get(language);
+                        return translation == null || (translation.getStatus() == TranslationStatus.MACHINE
+                                && !hash.equals(translation.getSourceHash()));
+                    })
+                    .sorted()
+                    .toList();
+        }).orElse(List.of());
+    }
+
     @Transactional
     public Optional<RecipeTranslationResponse> saveTranslation(UUID recipeId, String language,
                                                               RecipeTranslationRequest request) {

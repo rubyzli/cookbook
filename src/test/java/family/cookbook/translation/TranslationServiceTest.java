@@ -143,6 +143,47 @@ class TranslationServiceTest {
         assertThat(service.machineTranslate(missing, "de")).isEmpty();
     }
 
+    private RecipeTranslation existingTranslation(String language, TranslationStatus status, String sourceHash) {
+        RecipeTranslation translation = new RecipeTranslation(recipe.getId(), language);
+        translation.update("x", null, null, null, Map.of(), status, sourceHash);
+        return translation;
+    }
+
+    @Test
+    void automaticTranslationCoversTheOtherLanguagesOfANewRecipe() {
+        when(recipeTranslations.findByIdOwnerIdOrderByIdLanguage(recipe.getId())).thenReturn(List.of());
+
+        assertThat(service.languagesToTranslateAutomatically(recipe.getId())).containsExactly("de", "en");
+    }
+
+    @Test
+    void automaticTranslationRedoesOnlyOutdatedMachineTranslations() {
+        String current = SourceText.hash(recipe);
+        when(recipeTranslations.findByIdOwnerIdOrderByIdLanguage(recipe.getId())).thenReturn(List.of(
+                existingTranslation("de", TranslationStatus.MACHINE, "older text"),
+                existingTranslation("en", TranslationStatus.MACHINE, current)));
+
+        assertThat(service.languagesToTranslateAutomatically(recipe.getId())).containsExactly("de");
+    }
+
+    @Test
+    void automaticTranslationNeverReplacesAReviewedTranslation() {
+        when(recipeTranslations.findByIdOwnerIdOrderByIdLanguage(recipe.getId())).thenReturn(List.of(
+                existingTranslation("de", TranslationStatus.REVIEWED, "older text")));
+
+        assertThat(service.languagesToTranslateAutomatically(recipe.getId())).containsExactly("en");
+    }
+
+    @Test
+    void automaticTranslationNeedsATranslatorAndAnExistingRecipe() {
+        MachineTranslator disabled = mock(MachineTranslator.class);
+        TranslationService withoutKey = new TranslationService(recipeRepository, categoryRepository, ingredientRepository,
+                recipeTranslations, categoryTranslations, ingredientTranslations, disabled);
+
+        assertThat(withoutKey.languagesToTranslateAutomatically(recipe.getId())).isEmpty();
+        assertThat(service.languagesToTranslateAutomatically(UUID.randomUUID())).isEmpty();
+    }
+
     @Test
     void saveTranslationStoresAReviewedTranslationForTheCurrentOriginal() {
         RecipeTranslationRequest request = new RecipeTranslationRequest(" Kartoffelsalat ", "  ", "Kochen.\nSchneiden.",

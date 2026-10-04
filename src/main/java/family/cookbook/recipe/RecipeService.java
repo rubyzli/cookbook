@@ -11,6 +11,7 @@ import family.cookbook.recipe.dto.RecipeSummary;
 import family.cookbook.translation.Languages;
 import family.cookbook.translation.Localization;
 import family.cookbook.translation.TranslationLookup;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,15 +37,18 @@ public class RecipeService {
     private final CategoryRepository categoryRepository;
     private final IngredientRepository ingredientRepository;
     private final TranslationLookup translations;
+    private final ApplicationEventPublisher events;
 
     public RecipeService(RecipeRepository recipeRepository,
                          CategoryRepository categoryRepository,
                          IngredientRepository ingredientRepository,
-                         TranslationLookup translations) {
+                         TranslationLookup translations,
+                         ApplicationEventPublisher events) {
         this.recipeRepository = recipeRepository;
         this.categoryRepository = categoryRepository;
         this.ingredientRepository = ingredientRepository;
         this.translations = translations;
+        this.events = events;
     }
 
     // language: show translations into it where they exist; empty shows the originals
@@ -79,7 +83,9 @@ public class RecipeService {
         recipe.setLanguage(request.language() == null ? Languages.DEFAULT : request.language());
         applyRequest(recipe, request);
         // Flush so createdAt is set before it goes into the response
-        return RecipeDetail.from(recipeRepository.saveAndFlush(recipe));
+        Recipe saved = recipeRepository.saveAndFlush(recipe);
+        events.publishEvent(new RecipeSaved(saved.getId()));
+        return RecipeDetail.from(saved);
     }
 
     @Transactional
@@ -93,7 +99,9 @@ public class RecipeService {
         }
         Recipe recipe = existing.get();
         applyRequest(recipe, request);
-        return Optional.of(RecipeDetail.from(recipeRepository.saveAndFlush(recipe)));
+        Recipe saved = recipeRepository.saveAndFlush(recipe);
+        events.publishEvent(new RecipeSaved(saved.getId()));
+        return Optional.of(RecipeDetail.from(saved));
     }
 
     public void deleteRecipe(UUID id) {

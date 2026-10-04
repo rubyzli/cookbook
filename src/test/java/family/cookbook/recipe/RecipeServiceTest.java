@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -53,6 +54,9 @@ class RecipeServiceTest {
 
     @Mock
     private TranslationLookup translationLookup;
+
+    @Mock
+    private ApplicationEventPublisher events;
 
     @InjectMocks
     private RecipeService recipeService;
@@ -186,6 +190,8 @@ class RecipeServiceTest {
                 new RecipeIngredientResponse(flour.getId(), "Flour", new BigDecimal("250"), "g", "For the dough"),
                 new RecipeIngredientResponse(butter.getId(), "Butter", new BigDecimal("125"), "g", "For the dough"),
                 new RecipeIngredientResponse(butter.getId(), "Butter", new BigDecimal("1"), "tbsp", "For the top"));
+        // so it gets translated automatically once committed
+        verify(events).publishEvent(any(RecipeSaved.class));
     }
 
     @Test
@@ -272,6 +278,7 @@ class RecipeServiceTest {
             assertThat(detail.ingredients()).extracting(RecipeIngredientResponse::name).containsExactly("Sugar");
             assertThat(detail.ingredients()).extracting(RecipeIngredientResponse::group).containsExactly((String) null);
         });
+        verify(events).publishEvent(new RecipeSaved(recipe.getId()));
     }
 
     @Test
@@ -281,6 +288,7 @@ class RecipeServiceTest {
 
         assertThat(recipeService.updateRecipe(id, request("Pie", List.of(), List.of()))).isEmpty();
         verify(recipeRepository, never()).saveAndFlush(any());
+        verify(events, never()).publishEvent(any(Object.class));
     }
 
     @Test
@@ -294,6 +302,7 @@ class RecipeServiceTest {
                         ex -> assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.CONFLICT));
         assertThat(recipe.getName()).isEqualTo("Pie");
         verify(recipeRepository, never()).saveAndFlush(any());
+        verify(events, never()).publishEvent(any(Object.class));
     }
 
     @Test

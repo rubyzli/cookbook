@@ -18,8 +18,8 @@ so entries are grouped by date.
   (e.g. "kemény hab", whipped cream, became "Eischnee", beaten egg whites).
 - Category names, ingredient names, recipe texts and units are translated; free text inside
   ingredient units that isn't in the unit rules (e.g. "marék") stays as written.
-- Translating a recipe automatically again sends the whole recipe to DeepL, even if only one line
-  changed. Viewing translations never calls DeepL, and names that are already translated aren't
+- Translating a recipe automatically again (including after an edit) sends the whole recipe to
+  DeepL, even if only one line changed. Viewing translations never calls DeepL, and names that are already translated aren't
   sent again.
 - A replaced or removed photo stays in the database; uploads are never deleted automatically.
 
@@ -27,6 +27,9 @@ so entries are grouped by date.
 
 ### Changed
 
+- Saving a recipe translates it into the other languages automatically, in the background, when a
+  DeepL key is set. Missing translations and outdated machine translations are (re)made; reviewed
+  ones are kept. A failed translation is logged and doesn't affect the save.
 - Photos are stored in the database (`image` table, migration V6) and served at
   `GET /api/images/{id}` instead of from the `~/cookbook-images` folder at `/images/...`, so they
   work on a deployed server and survive redeploys. `COOKBOOK_IMAGES_DIR` is no longer used.
