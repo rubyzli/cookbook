@@ -21,10 +21,16 @@ so entries are grouped by date.
 - Translating a recipe automatically again sends the whole recipe to DeepL, even if only one line
   changed. Viewing translations never calls DeepL, and names that are already translated aren't
   sent again.
-- A replaced or removed photo stays in the images folder; uploads are never deleted
-  automatically.
+- A replaced or removed photo stays in the database; uploads are never deleted automatically.
 
 ## 2026-10-04
+
+### Changed
+
+- Photos are stored in the database (`image` table, migration V6) and served at
+  `GET /api/images/{id}` instead of from the `~/cookbook-images` folder at `/images/...`, so they
+  work on a deployed server and survive redeploys. `COOKBOOK_IMAGES_DIR` is no longer used.
+  `scripts/images-to-sql.sh` moves existing photos in and repoints their recipes.
 
 ### Added
 

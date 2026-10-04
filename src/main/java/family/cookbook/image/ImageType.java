@@ -6,16 +6,16 @@ import java.util.Optional;
 // The photo formats browsers can show, recognized by their first bytes rather than by the file
 // name or the type the browser claims, which are easy to get wrong or fake
 enum ImageType {
-    JPEG("jpg", new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF}),
-    PNG("png", new byte[] {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'}),
-    GIF("gif", new byte[] {'G', 'I', 'F', '8'}),
-    WEBP("webp", null);
+    JPEG("image/jpeg", new byte[] {(byte) 0xFF, (byte) 0xD8, (byte) 0xFF}),
+    PNG("image/png", new byte[] {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'}),
+    GIF("image/gif", new byte[] {'G', 'I', 'F', '8'}),
+    WEBP("image/webp", null);
 
-    final String extension;
+    final String contentType;
     private final byte[] signature;
 
-    ImageType(String extension, byte[] signature) {
-        this.extension = extension;
+    ImageType(String contentType, byte[] signature) {
+        this.contentType = contentType;
         this.signature = signature;
     }
 

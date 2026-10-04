@@ -159,12 +159,12 @@ describe('RecipeListPage', () => {
   })
 
   it('shows the photo, and the letter tile instead when the photo fails to load', async () => {
-    mockApi({ '/api/recipes': [{ ...applePie, imageUrl: '/images/pie.jpg' }], '/api/categories': [] })
+    mockApi({ '/api/recipes': [{ ...applePie, imageUrl: '/api/images/pie' }], '/api/categories': [] })
     const { container } = renderApp('/')
     await screen.findByRole('link', { name: /Apple Pie/ })
 
     const image = container.querySelector('img')
-    expect(image).toHaveAttribute('src', '/images/pie.jpg')
+    expect(image).toHaveAttribute('src', '/api/images/pie')
 
     fireEvent.error(image)
 

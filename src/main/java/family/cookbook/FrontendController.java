@@ -13,13 +13,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 // Not forwarded, so they reach their real handlers:
 // - /api/**, so unknown API paths stay 404s instead of returning HTML
 // - /assets/**, the JS and CSS files Vite builds into static/assets
-// - /images/**, recipe photos served from the images folder (see image/ImagesConfig)
 // - top-level files such as /favicon.svg (a dot in the first segment)
 @Controller
 public class FrontendController {
 
     // Spring only allows ** at the end of a pattern, so exclusions are decided by the first segment
-    @GetMapping({"/", "/{segment:^(?!api$|assets$|images$)[^.]*$}/**"})
+    @GetMapping({"/", "/{segment:^(?!api$|assets$)[^.]*$}/**"})
     public String forwardToApp(HttpServletResponse response) {
         // Browsers must check back before reusing the page: it changes with every build, and a
         // cached copy would otherwise keep being shown, even in place of an image that was once

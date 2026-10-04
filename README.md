@@ -51,12 +51,18 @@ A family cookbook: recipes, categories and ingredients, stored in PostgreSQL.
 
 Photos are uploaded in the recipe form ("Upload photo"; on a phone this also offers the camera).
 The browser shrinks large photos to at most 1600 px before uploading, and the server accepts JPEG,
-PNG, WebP and GIF up to 15 MB, checked by the file's content. Uploads are saved under a generated
-name (`upload-20261004-3f9a1c7b.jpg`) in an images folder outside the project, `~/cookbook-images`
-by default (set `COOKBOOK_IMAGES_DIR` to use another one), which the app serves at `/images/...`.
-Linking to a photo online (`https://...`) still works too.
+PNG, WebP and GIF up to 15 MB, checked by the file's content. Uploads are stored in the database
+(the `image` table) and served at `/api/images/{id}`, so they survive redeploys and are part of
+every database backup. Linking to a photo online (`https://...`) still works too.
 
-The folder isn't in git or in the jar, so back it up along with the database.
+Photos used to be files in `~/cookbook-images`, served at `/images/...`. To move them into a
+database, run once against it:
+
+```sh
+scripts/images-to-sql.sh ~/cookbook-images | psql "<connection string>"
+```
+
+It's safe to run again; it only touches recipes that still point at `/images/...`.
 
 ## Translating recipes
 
@@ -219,7 +225,8 @@ editing. Recipes take a `language` field (`en`, `de` or `hu`).
 | POST   | `/api/recipes/{id}/translations/{lang}/machine` | Machine-translate a recipe (replaces an existing translation) |
 | PUT    | `/api/recipes/{id}/translations/{lang}` | Save a translation, by default as reviewed |
 | DELETE | `/api/recipes/{id}/translations/{lang}` | Delete a translation |
-| POST   | `/api/images` | Upload a photo (multipart field `file`); answers `{"url": "/images/..."}` for a recipe's `imageUrl` |
+| POST   | `/api/images` | Upload a photo (multipart field `file`); answers `{"url": "/api/images/{id}"}` for a recipe's `imageUrl` |
+| GET    | `/api/images/{id}` | A stored photo |
 | PUT/DELETE | `/api/{ingredients,categories}/{id}/translations/{lang}` | Set or remove a name in another language |
 | POST   | `/api/{ingredients,categories}/translations/{lang}/machine` | Machine-translate all names that have no translation in that language |
 
@@ -249,7 +256,7 @@ src/main/java/family/cookbook/
 ├── category/      Category entity, repository, service, controller
 ├── ingredient/    Ingredient entity, repository, service, controller
 ├── recipe/        Recipe entity, repository, service, controller
-├── image/         Photo uploads and serving the images folder at /images
+├── image/         Photo uploads, stored in the database and served at /api/images/{id}
 ├── translation/   Languages, translation tables, DeepL client, translation endpoints
 ├── ApiExceptionHandler.java   Renders errors as problem details
 └── FrontendController.java    Serves the React app for its page URLs

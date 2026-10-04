@@ -44,7 +44,7 @@ class FrontendControllerTest {
     // Whether these exist depends on whether the frontend has been built into static/,
     // so only check that they're not turned into the app page
     @ParameterizedTest
-    @ValueSource(strings = {"/assets/index-abc123.js", "/assets", "/favicon.svg", "/images/lecso.jpg", "/images"})
+    @ValueSource(strings = {"/assets/index-abc123.js", "/assets", "/favicon.svg"})
     void leavesFilesAlone(String path) throws Exception {
         mockMvc.perform(get(path))
                 .andExpect(forwardedUrl(null));

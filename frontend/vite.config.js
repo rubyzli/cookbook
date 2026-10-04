@@ -5,11 +5,10 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   server: {
-    // Forward API calls and recipe photos to Spring Boot so the browser sees a single origin
+    // Forward API calls (photos included) to Spring Boot so the browser sees a single origin
     // and no CORS setup is needed
     proxy: {
       '/api': 'http://localhost:8080',
-      '/images': 'http://localhost:8080',
     },
   },
   test: {

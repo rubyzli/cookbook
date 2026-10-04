@@ -40,7 +40,7 @@ const fileInput = () => screen.getByLabelText(/^(Upload|Change) photo$/)
 describe('photo field', () => {
   it('uploads a chosen photo, shows it, and saves its URL with the recipe', async () => {
     const fetchMock = mockApi(
-      routes({ 'POST /api/images': { status: 201, body: { url: '/images/upload-20261004-3f9a1c7b.jpg' } } }),
+      routes({ 'POST /api/images': { status: 201, body: { url: '/api/images/3f9a1c7b-0000-4000-8000-000000000001' } } }),
     )
     renderApp('/recipes/new')
     await screen.findByLabelText('Upload photo')
@@ -49,7 +49,7 @@ describe('photo field', () => {
 
     expect(await screen.findByRole('img', { name: 'Photo of the recipe' })).toHaveAttribute(
       'src',
-      '/images/upload-20261004-3f9a1c7b.jpg',
+      '/api/images/3f9a1c7b-0000-4000-8000-000000000001',
     )
     expect(screen.getByLabelText('Change photo')).toHaveAttribute('type', 'file')
     const [upload] = sentRequests(fetchMock)
@@ -59,7 +59,7 @@ describe('photo field', () => {
     await userEvent.type(screen.getByLabelText('Name'), 'Pie')
     await userEvent.click(screen.getByRole('button', { name: 'Create recipe' }))
     await waitFor(() => expect(sentRequests(fetchMock)).toHaveLength(2))
-    expect(sentRequests(fetchMock)[1].body.imageUrl).toBe('/images/upload-20261004-3f9a1c7b.jpg')
+    expect(sentRequests(fetchMock)[1].body.imageUrl).toBe('/api/images/3f9a1c7b-0000-4000-8000-000000000001')
   })
 
   it.each([
@@ -77,7 +77,7 @@ describe('photo field', () => {
   })
 
   it('removes the photo of an existing recipe', async () => {
-    const withPhoto = { ...recipe, imageUrl: '/images/pie.jpg' }
+    const withPhoto = { ...recipe, imageUrl: '/api/images/pie' }
     const fetchMock = mockApi(
       routes({
         '/api/recipes/r1?original=true': withPhoto,
@@ -87,7 +87,7 @@ describe('photo field', () => {
     )
     renderApp('/recipes/r1/edit')
 
-    expect(await screen.findByRole('img', { name: 'Photo of the recipe' })).toHaveAttribute('src', '/images/pie.jpg')
+    expect(await screen.findByRole('img', { name: 'Photo of the recipe' })).toHaveAttribute('src', '/api/images/pie')
     await userEvent.click(screen.getByRole('button', { name: 'Remove photo' }))
     expect(screen.queryByRole('img', { name: 'Photo of the recipe' })).not.toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))

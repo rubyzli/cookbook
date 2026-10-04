@@ -26,7 +26,5 @@ frontend:
   url: ${FRONTEND_URL:https://cookbook-three-beta.vercel.app}
 
 cookbook:
-  images-dir: ${COOKBOOK_IMAGES_DIR:${user.home}/cookbook-images}
-
   deepl:
     api-key: ${DEEPL_API_KEY:}

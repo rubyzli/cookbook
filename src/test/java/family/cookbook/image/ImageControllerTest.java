@@ -11,9 +11,15 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Optional;
+import java.util.UUID;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -31,11 +37,11 @@ class ImageControllerTest {
 
     @Test
     void uploadReturnsTheUrlOfTheStoredPhoto() throws Exception {
-        when(storage.store(any(MultipartFile.class))).thenReturn("/images/upload-20261004-3f9a1c7b.jpg");
+        when(storage.store(any(MultipartFile.class))).thenReturn("/api/images/3f9a1c7b-0000-4000-8000-000000000001");
 
         mockMvc.perform(multipart("/api/images").file(PHOTO))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.url").value("/images/upload-20261004-3f9a1c7b.jpg"));
+                .andExpect(jsonPath("$.url").value("/api/images/3f9a1c7b-0000-4000-8000-000000000001"));
     }
 
     @Test
@@ -59,6 +65,32 @@ class ImageControllerTest {
     @Test
     void uploadNeedsAFile() throws Exception {
         mockMvc.perform(multipart("/api/images"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void servesAStoredPhotoWithItsTypeAndLongCaching() throws Exception {
+        UUID id = UUID.randomUUID();
+        when(storage.find(id)).thenReturn(Optional.of(new Image("image/png", new byte[] {1, 2, 3})));
+
+        mockMvc.perform(get("/api/images/" + id))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("image/png"))
+                .andExpect(header().string("Cache-Control", "max-age=31536000, public, immutable"))
+                .andExpect(content().bytes(new byte[] {1, 2, 3}));
+    }
+
+    @Test
+    void answers404ForAnUnknownPhoto() throws Exception {
+        when(storage.find(any())).thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/images/" + UUID.randomUUID()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void answers400ForAMalformedId() throws Exception {
+        mockMvc.perform(get("/api/images/lecso.jpg"))
                 .andExpect(status().isBadRequest());
     }
 }

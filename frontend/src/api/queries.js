@@ -113,7 +113,7 @@ export function useImportRecipe() {
   })
 }
 
-// Uploads a photo into the images folder; resolves with its URL ("/images/...")
+// Uploads a photo into the database; resolves with its URL ("/api/images/...")
 export function useUploadPhoto() {
   return useMutation({
     mutationFn: async (file) => (await apiUpload('/api/images', file)).url,

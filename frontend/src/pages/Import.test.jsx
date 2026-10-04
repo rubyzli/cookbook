@@ -10,7 +10,7 @@ const draft = {
   prepTimeMinutes: 15,
   cookTimeMinutes: 30,
   instructions: 'Megfőzzük.\nRétegezzük.',
-  imageUrl: '/images/upload-20261004-d2ce7e59.jpg',
+  imageUrl: '/api/images/d2ce7e59-0000-4000-8000-000000000001',
   sourceUrl: 'https://www.nosalty.hu/recept/rakott-krumpli',
   language: 'hu',
   categoryIds: ['c1'],

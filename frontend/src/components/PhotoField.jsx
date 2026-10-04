@@ -16,10 +16,10 @@ export default function PhotoField({ value, onChange, error }) {
 
   const [uploadError, setUploadError] = useState(null)
 
-  // Uploaded photos live under /images.
+  // Uploaded photos live under /api/images.
   // Anything else was linked manually, so show the URL field.
   const [showLink, setShowLink] = useState(
-      Boolean(value) && !value.startsWith('/images/'),
+      Boolean(value) && !value.startsWith('/api/images/'),
   )
 
   async function handleFile(event) {

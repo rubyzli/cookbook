@@ -2,6 +2,8 @@ package family.cookbook.importer;
 
 import family.cookbook.category.Category;
 import family.cookbook.category.CategoryRepository;
+import family.cookbook.image.Image;
+import family.cookbook.image.ImageRepository;
 import family.cookbook.image.ImageStorage;
 import family.cookbook.importer.dto.ImportedRecipe;
 import family.cookbook.translation.TranslationLookup;
@@ -9,14 +11,12 @@ import family.cookbook.translation.TranslationLookup.TranslatedName;
 import family.cookbook.translation.TranslationStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.springframework.http.HttpStatus;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +25,10 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class RecipeImportServiceTest {
@@ -62,10 +65,8 @@ class RecipeImportServiceTest {
         }
     }
 
-    @TempDir
-    Path imagesDir;
-
     private final FakeFetcher fetcher = new FakeFetcher();
+    private final ImageRepository images = mock(ImageRepository.class);
     private final CategoryRepository categories = mock(CategoryRepository.class);
     private final TranslationLookup translations = mock(TranslationLookup.class);
     private RecipeImportService service;
@@ -74,10 +75,15 @@ class RecipeImportServiceTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        service = new RecipeImportService(fetcher, new ImageStorage(imagesDir), categories, translations,
+        service = new RecipeImportService(fetcher, new ImageStorage(images), categories, translations,
                 JsonMapper.builder().build());
         mainCourse = withId(new Category("Főétel", "hu"));
         salad = withId(new Category("Saláta", "hu"));
+        when(images.save(any(Image.class))).thenAnswer(call -> {
+            Image image = call.getArgument(0);
+            image.setId(UUID.fromString("3f9a1c7b-0000-4000-8000-000000000001"));
+            return image;
+        });
         when(categories.findAll()).thenReturn(List.of(mainCourse, salad));
         when(translations.allCategoryNames()).thenReturn(
                 Map.of(salad.getId(), Map.of("de", new TranslatedName("Salat", TranslationStatus.MACHINE))));
@@ -108,8 +114,8 @@ class RecipeImportServiceTest {
                 new ImportedRecipe.Ingredient(null, "ízlés szerint", "só"));
         // "Főétel" by name, "Salat" through the German translation of "Saláta"; "gyors" matches nothing
         assertThat(draft.categoryIds()).containsExactly(mainCourse.getId(), salad.getId());
-        assertThat(draft.imageUrl()).matches("/images/upload-\\d{8}-[0-9a-f]{8}\\.jpg");
-        assertThat(imagesDir.toFile().list()).hasSize(1);
+        assertThat(draft.imageUrl()).isEqualTo("/api/images/3f9a1c7b-0000-4000-8000-000000000001");
+        verify(images).save(any(Image.class));
     }
 
     @Test
@@ -121,7 +127,7 @@ class RecipeImportServiceTest {
 
         assertThat(draft.imageUrl()).isEqualTo("https://site.example/img/krumpli.jpg");
         assertThat(draft.warnings()).containsExactly("PHOTO_NOT_DOWNLOADED");
-        assertThat(imagesDir.toFile().list()).isEmpty();
+        verify(images, never()).save(any(Image.class));
     }
 
     @Test

@@ -91,7 +91,7 @@ public class RecipeImportService {
                 warnings);
     }
 
-    // Saved into the images folder so the recipe keeps its photo if the site changes; if that
+    // Saved into the database so the recipe keeps its photo if the site changes; if that
     // fails, the photo is linked instead
     private String savePhoto(List<String> candidates, URI page, List<String> warnings) {
         if (candidates.isEmpty()) return null;
