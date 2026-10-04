@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router'
 import { ApiError } from './api/client.js'
 import App from './App.jsx'
 import I18nProvider from './i18n/I18nProvider.jsx'
+import '@fontsource-variable/fraunces'
 import './index.css'
 
 const queryClient = new QueryClient({

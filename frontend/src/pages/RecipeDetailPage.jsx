@@ -50,13 +50,17 @@ function RecipeDetailContent({ query }) {
   return (
     <article className="recipe-detail">
       <header className={recipe.imageUrl ? 'recipe-detail-header with-image' : 'recipe-detail-header'}>
-        {/* No placeholder tile here: without a photo the title gets the full width */}
-        {recipe.imageUrl && <RecipeImage recipe={recipe} className="recipe-detail-image" />}
+        {/* No placeholder tile here: without a photo the title simply comes first */}
+        {recipe.imageUrl && (
+          <div className="recipe-hero">
+            <RecipeImage recipe={recipe} className="recipe-detail-image" />
+          </div>
+        )}
         <div className="recipe-detail-heading">
+          <CategoryChips categories={recipe.categories} />
           <h1>{recipe.name}</h1>
           {recipe.description && <p className="description">{recipe.description}</p>}
-          <RecipeMeta recipe={recipe} showTotal />
-          <CategoryChips categories={recipe.categories} />
+          <RecipeMeta recipe={recipe} showTotal pills />
           <RecipeActions recipe={recipe} />
         </div>
       </header>
@@ -75,8 +79,14 @@ function RecipeDetailContent({ query }) {
                   {section.lines.map((line, index) => (
                     // Index as key: the same ingredient can appear on several lines
                     <li key={index}>
-                      <span className="amount">{formatAmount(line.amount, line.unit, language)}</span>{' '}
-                      {line.name}
+                      {/* Ticking off ingredients while cooking; kept only until the page is left */}
+                      <label className="ingredient-check">
+                        <input type="checkbox" />
+                        <span>
+                          <span className="amount">{formatAmount(line.amount, line.unit, language)}</span>{' '}
+                          {line.name}
+                        </span>
+                      </label>
                     </li>
                   ))}
                 </ul>

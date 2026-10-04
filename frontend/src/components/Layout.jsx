@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet } from 'react-router'
 import { useI18n } from '../i18n/context.js'
+import Icon from './Icon.jsx'
 import { LANGUAGES } from '../i18n/translate.js'
 
 export default function Layout() {
@@ -9,6 +10,7 @@ export default function Layout() {
       <header className="site-header">
         <div className="container header-row">
           <Link to="/" className="site-title">
+            <Icon name="logo" className="site-logo" />
             {t('app.title')}
           </Link>
           <nav className="site-nav" aria-label={t('app.title')}>

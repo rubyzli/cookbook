@@ -6,12 +6,14 @@ import RecipeMeta from './RecipeMeta.jsx'
 export default function RecipeCard({ recipe }) {
   return (
     <Link to={`/recipes/${recipe.id}`} className="recipe-card">
-      <RecipeImage recipe={recipe} className="recipe-card-image" />
+      <div className="recipe-card-media">
+        <RecipeImage recipe={recipe} className="recipe-card-image" />
+      </div>
       <div className="recipe-card-body">
+        <CategoryChips categories={recipe.categories} linked={false} />
         <h2>{recipe.name}</h2>
         {recipe.description && <p className="description">{recipe.description}</p>}
         <RecipeMeta recipe={recipe} />
-        <CategoryChips categories={recipe.categories} linked={false} />
       </div>
     </Link>
   )

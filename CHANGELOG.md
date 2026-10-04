@@ -21,6 +21,15 @@ so entries are grouped by date.
 
 ### Added
 
+- **New look:** a bundled serif for headings (Fraunces, works offline and covers ő/ű), a logo and
+  pill navigation in a header that stays at the top, magazine-style recipe cards (four per row on
+  wide screens), and a recipe page with the photo beside the title and times as pills.
+- Category filter on the recipe list as chips with recipe counts, instead of a dropdown. Unused
+  categories are left out.
+- On the recipe page, ingredients can be ticked off while cooking, the ingredient list stays in
+  view while scrolling the steps on wide screens, and notes appear as a tip box.
+- A print layout for recipes, without the header and buttons.
+
 - **Notes** on recipes: tips, variations and footnotes in their own field, shown under the steps as
   plain paragraphs instead of being numbered as steps.
 - **Ingredient groups:** each ingredient line can belong to a group such as "A tésztához", shown as

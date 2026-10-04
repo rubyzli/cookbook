@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { useCategories, useRecipes } from '../api/queries.js'
+import Icon from '../components/Icon.jsx'
 import RecipeCard from '../components/RecipeCard.jsx'
 import StatusMessage from '../components/StatusMessage.jsx'
 import { useI18n } from '../i18n/context.js'
@@ -40,8 +41,10 @@ export default function RecipeListPage() {
   return (
     <>
       <div className="page-heading">
-        <h1>{t('list.title')}</h1>
-        {recipes.data && <p className="count">{t('list.count', { count: recipes.data.length })}</p>}
+        <div>
+          <h1>{t('list.title')}</h1>
+          {recipes.data && <p className="count">{t('list.count', { count: recipes.data.length })}</p>}
+        </div>
         <Link to="/recipes/new" className="button primary new-recipe">
           {t('list.newRecipe')}
         </Link>
@@ -51,32 +54,51 @@ export default function RecipeListPage() {
         <label className="visually-hidden" htmlFor="recipe-search">
           {t('list.searchLabel')}
         </label>
-        <input
-          id="recipe-search"
-          type="search"
-          placeholder={t('list.searchPlaceholder')}
-          value={searchInput}
-          onChange={(event) => setSearchInput(event.target.value)}
+        <div className="search-field">
+          <Icon name="search" />
+          <input
+            id="recipe-search"
+            type="search"
+            placeholder={t('list.searchPlaceholder')}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
+          />
+        </div>
+        <CategoryFilter
+          categories={categories.data ?? []}
+          selectedId={categoryId}
+          onSelect={(id) => updateParam(setSearchParams, 'categoryId', id)}
         />
-        <label className="visually-hidden" htmlFor="recipe-category">
-          {t('list.categoryLabel')}
-        </label>
-        <select
-          id="recipe-category"
-          value={categoryId}
-          onChange={(event) => updateParam(setSearchParams, 'categoryId', event.target.value)}
-        >
-          <option value="">{t('list.allCategories')}</option>
-          {categories.data?.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
       </div>
 
       <RecipeResults query={recipes} filtered={filtered} />
     </>
+  )
+}
+
+// One toggle button per category, with how many recipes it has. Categories nobody uses yet are
+// left out (picking one would always show an empty list) unless one is already selected.
+function CategoryFilter({ categories, selectedId, onSelect }) {
+  const { t } = useI18n()
+  const shown = categories.filter((category) => category.recipeCount !== 0 || category.id === selectedId)
+  return (
+    <div className="category-filter" role="group" aria-label={t('list.categoryLabel')}>
+      <button type="button" className="filter-chip" aria-pressed={selectedId === ''} onClick={() => onSelect('')}>
+        {t('list.allCategories')}
+      </button>
+      {shown.map((category) => (
+        <button
+          key={category.id}
+          type="button"
+          className="filter-chip"
+          aria-pressed={selectedId === category.id}
+          onClick={() => onSelect(selectedId === category.id ? '' : category.id)}
+        >
+          {category.name}
+          {category.recipeCount != null && <span className="filter-count">{category.recipeCount}</span>}
+        </button>
+      ))}
+    </div>
   )
 }
 

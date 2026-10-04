@@ -42,19 +42,27 @@ describe('RecipeListPage', () => {
     expect(screen.getByText('2 recipes')).toBeInTheDocument()
   })
 
-  it('lists categories alphabetically in the filter', async () => {
-    mockApi({ '/api/recipes': [], '/api/categories': [italian, dessert] })
+  it('lists categories alphabetically in the filter, with counts, leaving out unused ones', async () => {
+    mockApi({
+      '/api/recipes': [],
+      '/api/categories': [
+        { ...italian, recipeCount: 1 },
+        { ...dessert, recipeCount: 3 },
+        { id: 'c3', name: 'Unused', recipeCount: 0 },
+      ],
+    })
 
     renderApp('/')
 
-    const select = screen.getByRole('combobox', { name: 'Category' })
+    const filter = screen.getByRole('group', { name: 'Category' })
     await waitFor(() =>
-      expect(within(select).getAllByRole('option').map((option) => option.textContent)).toEqual([
+      expect(within(filter).getAllByRole('button').map((button) => button.textContent)).toEqual([
         'All categories',
-        'Dessert',
-        'Italian',
+        'Dessert3',
+        'Italian1',
       ]),
     )
+    expect(within(filter).getByRole('button', { name: 'All categories' })).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('filters by category and puts the filter in the URL', async () => {
@@ -66,12 +74,17 @@ describe('RecipeListPage', () => {
     renderApp('/')
     await screen.findByRole('link', { name: /Apple Pie/ })
 
-    await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Category' }), 'Italian')
+    await userEvent.click(within(screen.getByRole('group', { name: 'Category' })).getByRole('button', { name: /Italian/ }))
 
     await waitFor(() => expect(screen.queryByRole('link', { name: /Apple Pie/ })).not.toBeInTheDocument())
     expect(screen.getByRole('link', { name: /Lasagna/ })).toBeInTheDocument()
     expect(requestedUrls(fetchMock)).toContain('/api/recipes?categoryId=c2')
     expect(screen.getByTestId('location')).toHaveTextContent('/?categoryId=c2')
+    expect(screen.getByRole('button', { name: /Italian/ })).toHaveAttribute('aria-pressed', 'true')
+
+    // Clicking the selected category again shows everything
+    await userEvent.click(screen.getByRole('button', { name: /Italian/ }))
+    await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/))
   })
 
   it('searches after typing pauses, with a single request', async () => {
@@ -102,7 +115,7 @@ describe('RecipeListPage', () => {
 
     await screen.findByRole('link', { name: /Apple Pie/ })
     expect(screen.getByRole('searchbox', { name: 'Search recipes' })).toHaveValue('pie')
-    await waitFor(() => expect(screen.getByRole('combobox', { name: 'Category' })).toHaveValue('c1'))
+    await waitFor(() => expect(screen.getByRole('button', { name: /Dessert/ })).toHaveAttribute('aria-pressed', 'true'))
     expect(requestedUrls(fetchMock)).toContain('/api/recipes?search=pie&categoryId=c1')
   })
 
