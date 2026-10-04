@@ -18,12 +18,17 @@ so entries are grouped by date.
   (e.g. "kemény hab", whipped cream, became "Eischnee", beaten egg whites).
 - Category names, ingredient names, recipe texts and units are translated; free text inside
   ingredient units that isn't in the unit rules (e.g. "marék") stays as written.
+- Translating a recipe automatically again sends the whole recipe to DeepL, even if only one line
+  changed. Viewing translations never calls DeepL, and names that are already translated aren't
+  sent again.
 - There's no photo upload: a photo is added by copying the file into the images folder and
   setting the recipe's photo URL to `/images/<file name>`.
 
 ## 2026-10-04
 
 ### Added
+
+**Translations**
 
 - **Recipe translations** between English, German and Hungarian, in any direction:
   - Recipes, ingredients and categories record the language they're written in (existing ones are
@@ -44,14 +49,7 @@ so entries are grouped by date.
   `recipe_translation`, `recipe_translation_group`, `ingredient_translation` and
   `category_translation` tables.
 
-- **New look:** a bundled serif for headings (Fraunces, works offline and covers ő/ű), a logo and
-  pill navigation in a header that stays at the top, magazine-style recipe cards (four per row on
-  wide screens), and a recipe page with the photo beside the title and times as pills.
-- Category filter on the recipe list as chips with recipe counts, instead of a dropdown. Unused
-  categories are left out.
-- On the recipe page, ingredients can be ticked off while cooking, the ingredient list stays in
-  view while scrolling the steps on wide screens, and notes appear as a tip box.
-- A print layout for recipes, without the header and buttons.
+**Recipes**
 
 - **Notes** on recipes: tips, variations and footnotes in their own field, shown under the steps as
   plain paragraphs instead of being numbered as steps.
@@ -61,7 +59,24 @@ so entries are grouped by date.
 - `V3__add_recipe_notes_and_ingredient_groups.sql` adds `recipe.notes` and
   `recipe_ingredient.group_name`. The API has `notes` on recipes and `group` on ingredient lines.
 
+**Look and feel**
+
+- **New look:** a bundled serif for headings (Fraunces, works offline and covers ő/ű), a logo and
+  pill navigation in a header that stays at the top, magazine-style recipe cards (four per row on
+  wide screens), and a recipe page with the photo beside the title and times as pills.
+- Category filter on the recipe list as chips with recipe counts, instead of a dropdown. Unused
+  categories are left out.
+- On the recipe page, ingredients can be ticked off while cooking, the ingredient list stays in
+  view while scrolling the steps on wide screens, and notes appear as a tip box.
+- A print layout for recipes, without the header and buttons.
+
 ### Changed
+
+- API responses follow `Accept-Language`: texts come in that language where a translation exists.
+  Recipe responses add `language`, `originalLanguage`, `translationStatus` and (on the detail)
+  `translationOutdated`; category and ingredient list entries add `originalName`,
+  `originalLanguage` and `translations`.
+- Recipe, category and ingredient lists are sorted by the name shown in the requested language.
 
 - App pages (`/` and page URLs such as `/recipes/{id}`) and photos under `/images/...` are sent with
   `Cache-Control: no-cache`, so browsers check with the server before reusing them.
@@ -77,6 +92,9 @@ so entries are grouped by date.
 
 ### Upgrade notes
 
+- The V4 migration runs when the new backend starts and marks all existing recipes, ingredients
+  and categories as Hungarian. A backend from before it keeps working against the migrated
+  database, but shows no translations, so restart every running backend.
 - For automatic translation, set `DEEPL_API_KEY` for the backend (a free DeepL API key works).
 - The V3 migration runs when the new backend starts. Stop every backend still running older code
   against the same database: it doesn't show notes, and saving a recipe through it drops the
