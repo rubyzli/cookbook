@@ -1,3 +1,5 @@
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? ''
+
 // Error thrown for any non-2xx response. The backend sends RFC 9457 problem details,
 // so `detail` holds the reason and `errors` maps field names to validation messages.
 // `kind` marks failures the client detected itself ('network', 'gateway') so the UI can
@@ -65,15 +67,27 @@ export async function apiUpload(path, file) {
 async function send(url, init) {
   let response
   try {
-    response = await fetch(url, init)
+    response = await fetch(`${API_BASE_URL}${url}`, init)
   } catch {
-    // fetch only rejects when no response arrived: server not running, connection lost, offline
-    throw new ApiError(NETWORK_ERROR, 'Can’t reach the server. Check that the app is running.', {}, 'network')
+    throw new ApiError(
+        NETWORK_ERROR,
+        'Can’t reach the server. Check that the app is running.',
+        {},
+        'network',
+    )
   }
+
   if (!response.ok) {
     throw await toApiError(response)
   }
+
   return response
+}
+
+export function apiUrl(path) {
+  if (!path) return path
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  return `${API_BASE_URL}${path}`
 }
 
 async function toApiError(response) {
