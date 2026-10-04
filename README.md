@@ -49,9 +49,13 @@ A family cookbook: recipes, categories and ingredients, stored in PostgreSQL.
 
 ## Recipe photos
 
-Photos are files in an images folder outside the project, `~/cookbook-images` by default (set
-`COOKBOOK_IMAGES_DIR` to use another one). The app serves that folder at `/images/...`, so a
-recipe's photo URL can be `/images/lecso.jpg`. Full `https://...` links to photos elsewhere work too.
+Photos are uploaded in the recipe form ("Upload photo"; on a phone this also offers the camera).
+The browser shrinks large photos to at most 1600 px before uploading, and the server accepts JPEG,
+PNG, WebP and GIF up to 15 MB, checked by the file's content. Uploads are saved under a generated
+name (`upload-20261004-3f9a1c7b.jpg`) in an images folder outside the project, `~/cookbook-images`
+by default (set `COOKBOOK_IMAGES_DIR` to use another one), which the app serves at `/images/...`.
+Linking to a photo online (`https://...`) still works too.
+
 The folder isn't in git or in the jar, so back it up along with the database.
 
 ## Translating recipes
@@ -215,6 +219,7 @@ editing. Recipes take a `language` field (`en`, `de` or `hu`).
 | POST   | `/api/recipes/{id}/translations/{lang}/machine` | Machine-translate a recipe (replaces an existing translation) |
 | PUT    | `/api/recipes/{id}/translations/{lang}` | Save a translation, by default as reviewed |
 | DELETE | `/api/recipes/{id}/translations/{lang}` | Delete a translation |
+| POST   | `/api/images` | Upload a photo (multipart field `file`); answers `{"url": "/images/..."}` for a recipe's `imageUrl` |
 | PUT/DELETE | `/api/{ingredients,categories}/{id}/translations/{lang}` | Set or remove a name in another language |
 | POST   | `/api/{ingredients,categories}/translations/{lang}/machine` | Machine-translate all names that have no translation in that language |
 
@@ -244,10 +249,10 @@ src/main/java/family/cookbook/
 ├── category/      Category entity, repository, service, controller
 ├── ingredient/    Ingredient entity, repository, service, controller
 ├── recipe/        Recipe entity, repository, service, controller
+├── image/         Photo uploads and serving the images folder at /images
 ├── translation/   Languages, translation tables, DeepL client, translation endpoints
 ├── ApiExceptionHandler.java   Renders errors as problem details
-├── FrontendController.java    Serves the React app for its page URLs
-└── ImagesConfig.java          Serves the images folder at /images
+└── FrontendController.java    Serves the React app for its page URLs
 
 frontend/src/
 ├── api/           fetch wrapper (client.js) and TanStack Query hooks (queries.js)

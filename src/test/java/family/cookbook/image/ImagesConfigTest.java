@@ -1,5 +1,6 @@
-package family.cookbook;
+package family.cookbook.image;
 
+import family.cookbook.FrontendController;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;

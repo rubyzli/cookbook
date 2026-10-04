@@ -13,6 +13,7 @@ import {
 } from '../utils/recipeForm.js'
 import CategoryPicker from './CategoryPicker.jsx'
 import Field from './Field.jsx'
+import PhotoField from './PhotoField.jsx'
 import IngredientLinesEditor from './IngredientLinesEditor.jsx'
 
 // Shared by the new and edit pages. `onSave(request)` sends the request and resolves with the
@@ -104,17 +105,7 @@ export default function RecipeForm({ initialValues, submitLabel, cancelTo, onSav
             />
           )}
         </Field>
-        <Field label={t('form.imageUrl')} hint={t('form.imageUrlHint')} error={errors.imageUrl}>
-          {(props) => (
-            <input
-              {...props}
-              type="url"
-              placeholder="https://…"
-              value={values.imageUrl}
-              onChange={(e) => set('imageUrl', e.target.value)}
-            />
-          )}
-        </Field>
+        <PhotoField value={values.imageUrl} onChange={(url) => set('imageUrl', url)} error={errors.imageUrl} />
         <div className="field-row">
           <Field label={t('form.servings')} error={errors.servings}>
             {(props) => (

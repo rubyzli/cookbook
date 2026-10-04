@@ -183,4 +183,16 @@ export default {
   'manage.machineMark': 'machine',
   'manage.noTranslations': 'No translations yet',
   'manage.filled': { one: 'Translated {count} name.', other: 'Translated {count} names.' },
+
+  'form.photo': 'Photo',
+  'form.uploadPhoto': 'Upload photo',
+  'form.changePhoto': 'Change photo',
+  'form.removePhoto': 'Remove photo',
+  'form.uploading': 'Uploading…',
+  'form.uploadFailed': 'Couldn’t upload the photo: {message}',
+  'form.photoTooLarge': 'The photo is too large (at most 15 MB).',
+  'form.photoType': 'Only JPEG, PNG, WebP and GIF photos can be uploaded.',
+  'form.photoLink': 'Or link to a photo online',
+  'form.photoHint': 'Large photos are made smaller before uploading. On a phone you can take one with the camera.',
+  'form.photoPreview': 'Photo of the recipe',
 }

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 // Not forwarded, so they reach their real handlers:
 // - /api/**, so unknown API paths stay 404s instead of returning HTML
 // - /assets/**, the JS and CSS files Vite builds into static/assets
-// - /images/**, recipe photos served from the images folder (see ImagesConfig)
+// - /images/**, recipe photos served from the images folder (see image/ImagesConfig)
 // - top-level files such as /favicon.svg (a dot in the first segment)
 @Controller
 public class FrontendController {

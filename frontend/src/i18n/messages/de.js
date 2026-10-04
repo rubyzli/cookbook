@@ -183,4 +183,16 @@ export default {
   'manage.machineMark': 'maschinell',
   'manage.noTranslations': 'Noch keine Übersetzungen',
   'manage.filled': { one: '{count} Name übersetzt.', other: '{count} Namen übersetzt.' },
+
+  'form.photo': 'Foto',
+  'form.uploadPhoto': 'Foto hochladen',
+  'form.changePhoto': 'Foto ändern',
+  'form.removePhoto': 'Foto entfernen',
+  'form.uploading': 'Wird hochgeladen…',
+  'form.uploadFailed': 'Das Foto konnte nicht hochgeladen werden: {message}',
+  'form.photoTooLarge': 'Das Foto ist zu groß (höchstens 15 MB).',
+  'form.photoType': 'Nur JPEG-, PNG-, WebP- und GIF-Fotos können hochgeladen werden.',
+  'form.photoLink': 'Oder Link zu einem Foto im Internet',
+  'form.photoHint': 'Große Fotos werden vor dem Hochladen verkleinert. Am Handy kannst du direkt eins aufnehmen.',
+  'form.photoPreview': 'Foto des Rezepts',
 }

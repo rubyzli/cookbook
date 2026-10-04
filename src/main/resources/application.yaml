@@ -13,6 +13,13 @@ spring:
   flyway:
     enabled: true
 
+  # Photo uploads. The site shrinks large photos before uploading, so this only needs room for
+  # an original that couldn't be shrunk.
+  servlet:
+    multipart:
+      max-file-size: 15MB
+      max-request-size: 16MB
+
 cookbook:
   # Folder whose files are served at /images/..., for recipe photos. Kept outside the project so
   # photos aren't committed or packaged; set COOKBOOK_IMAGES_DIR to use another folder.

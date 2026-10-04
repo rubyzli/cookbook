@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useI18n } from '../i18n/context.js'
 import { normalizeName } from '../utils/recipeForm.js'
-import { ApiError, apiGet, apiSend } from './client.js'
+import { ApiError, apiGet, apiSend, apiUpload } from './client.js'
 
 // The API answers in the site language (sent as Accept-Language), so cached data is kept per language
 
@@ -103,6 +103,13 @@ export function useDeleteItem(kind) {
         queryClient.invalidateQueries({ queryKey: [kind] }),
         queryClient.invalidateQueries({ queryKey: ['recipes'] }),
       ]),
+  })
+}
+
+// Uploads a photo into the images folder; resolves with its URL ("/images/...")
+export function useUploadPhoto() {
+  return useMutation({
+    mutationFn: async (file) => (await apiUpload('/api/images', file)).url,
   })
 }
 

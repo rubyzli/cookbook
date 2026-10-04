@@ -21,12 +21,21 @@ so entries are grouped by date.
 - Translating a recipe automatically again sends the whole recipe to DeepL, even if only one line
   changed. Viewing translations never calls DeepL, and names that are already translated aren't
   sent again.
-- There's no photo upload: a photo is added by copying the file into the images folder and
-  setting the recipe's photo URL to `/images/<file name>`.
+- A replaced or removed photo stays in the images folder; uploads are never deleted
+  automatically.
 
 ## 2026-10-04
 
 ### Added
+
+**Photos**
+
+- **Photo upload** in the recipe form, with a preview and buttons to change or remove the photo; on
+  phones it also offers the camera. Large photos are shrunk to at most 1600 px in the browser
+  before uploading (a 10 MB phone photo becomes about 300 KB). Linking to a photo online still
+  works.
+- `POST /api/images` stores an uploaded photo (JPEG, PNG, WebP or GIF, checked by content, up to
+  15 MB) under a generated name in the images folder and answers with its `/images/...` URL.
 
 **Translations**
 

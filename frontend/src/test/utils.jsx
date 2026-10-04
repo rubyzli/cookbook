@@ -35,7 +35,7 @@ export function mockApi(routes) {
     const method = options.method ?? 'GET'
     let route = routes[`${method} ${url}`] ?? (method === 'GET' ? routes[url] : undefined)
     if (typeof route === 'function') {
-      route = route({ method, url, body: options.body ? JSON.parse(options.body) : undefined })
+      route = route({ method, url, body: parseBody(options.body) })
     }
     if (route === undefined) {
       return jsonResponse(404, { status: 404, detail: 'Not found' })
@@ -47,6 +47,12 @@ export function mockApi(routes) {
   })
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
+}
+
+// JSON bodies as objects; an uploaded file as { file: File }
+function parseBody(body) {
+  if (body instanceof FormData) return Object.fromEntries(body.entries())
+  return body ? JSON.parse(body) : undefined
 }
 
 function jsonResponse(status, body) {
@@ -67,6 +73,6 @@ export function sentRequests(fetchMock) {
     .map(([url, options]) => ({
       method: options.method,
       url,
-      body: options.body ? JSON.parse(options.body) : undefined,
+      body: parseBody(options.body),
     }))
 }

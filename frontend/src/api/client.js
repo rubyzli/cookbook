@@ -48,6 +48,18 @@ export async function apiSend(method, path, body) {
   return response.status === 204 ? null : response.json()
 }
 
+// Uploads one file as multipart/form-data (field "file"); the browser sets the content type
+export async function apiUpload(path, file) {
+  const body = new FormData()
+  body.append('file', file)
+  const response = await send(path, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Accept-Language': language },
+    body,
+  })
+  return response.json()
+}
+
 async function send(url, init) {
   let response
   try {

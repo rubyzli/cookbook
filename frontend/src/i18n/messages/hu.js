@@ -179,4 +179,16 @@ export default {
   'manage.machineMark': 'gépi',
   'manage.noTranslations': 'Még nincs fordítás',
   'manage.filled': { other: '{count} név lefordítva.' },
+
+  'form.photo': 'Fotó',
+  'form.uploadPhoto': 'Fotó feltöltése',
+  'form.changePhoto': 'Fotó cseréje',
+  'form.removePhoto': 'Fotó eltávolítása',
+  'form.uploading': 'Feltöltés…',
+  'form.uploadFailed': 'Nem sikerült feltölteni a fotót: {message}',
+  'form.photoTooLarge': 'A fotó túl nagy (legfeljebb 15 MB).',
+  'form.photoType': 'Csak JPEG, PNG, WebP és GIF fotó tölthető fel.',
+  'form.photoLink': 'Vagy link egy online fotóra',
+  'form.photoHint': 'A nagy fotók feltöltés előtt kisebbek lesznek. Telefonon közvetlenül fotózhatsz is.',
+  'form.photoPreview': 'A recept fotója',
 }
