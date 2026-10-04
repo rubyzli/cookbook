@@ -235,7 +235,7 @@ Errors are returned as [problem details](https://www.rfc-editor.org/rfc/rfc9457)
 
 ## Database schema
 
-The schema is managed by Flyway migrations in `src/main/resources/db/migration`. Hibernate runs
+The schema is managed by Flyway migrations in `backend`. Hibernate runs
 with `ddl-auto: validate`, so it checks the entities against the tables at startup but never
 changes them.
 
